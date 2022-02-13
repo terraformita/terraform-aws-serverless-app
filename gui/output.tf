@@ -1,6 +1,6 @@
 output "out" {
   value = {
-    s3-bucket-arn = module.gui-bucket.s3_bucket_arn
-    s3-bucket-id  = module.gui-bucket.s3_bucket_id
+    s3-bucket-arn = aws_s3_bucket.gui.arn
+    s3-bucket-id  = aws_s3_bucket.gui.id
   }
 }

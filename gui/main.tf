@@ -3,52 +3,54 @@ locals {
 }
 
 #### S3 BUCKET FOR SERVING STATIC GUI CONTENT
-module "gui-bucket" {
-  source  = "terraform-aws-modules/s3-bucket/aws"
-  version = "2.11.1"
+resource "aws_s3_bucket" "gui" {
+  bucket        = "${var.name}-gui"
+  acl           = "private"
+  force_destroy = true
 
-  bucket = "${var.name}-gui"
-  acl    = "private"
-
-  versioning = {
+  versioning {
     enabled = true
   }
 
-  attach_policy = true
-  policy        = data.aws_iam_policy_document.gui-bucket.json
-
-  attach_deny_insecure_transport_policy = true
-
-  block_public_acls       = true
-  block_public_policy     = true
-  ignore_public_acls      = true
-  restrict_public_buckets = true
-
-  force_destroy = true
-
-  server_side_encryption_configuration = {
-    rule = {
-      apply_server_side_encryption_by_default = {
+  server_side_encryption_configuration {
+    rule {
+      apply_server_side_encryption_by_default {
         sse_algorithm = "AES256"
       }
     }
   }
 
-  logging = {
+  logging {
     target_bucket = var.s3-logs-bucket
-    target_prefix = "uploads/"
+    target_prefix = "${var.name}-gui/"
   }
 
   tags = var.tags
 }
 
+resource "aws_s3_bucket_public_access_block" "gui" {
+  bucket = aws_s3_bucket.gui.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+resource "aws_s3_bucket_policy" "gui" {
+  bucket = aws_s3_bucket.gui.id
+  policy = data.aws_iam_policy_document.gui-bucket.json
+}
+
 data "aws_iam_policy_document" "gui-bucket" {
   statement {
+    sid = "AllowAPIGWListBucket"
     principals {
       type        = "Service"
       identifiers = ["apigateway.amazonaws.com"]
     }
 
+    effect = "Allow"
     actions = [
       "s3:ListBucket",
     ]
@@ -59,11 +61,13 @@ data "aws_iam_policy_document" "gui-bucket" {
   }
 
   statement {
+    sid = "AllowAPIGWGetObject"
     principals {
       type        = "Service"
       identifiers = ["apigateway.amazonaws.com"]
     }
 
+    effect = "Allow"
     actions = [
       "s3:GetObject",
     ]
@@ -71,6 +75,61 @@ data "aws_iam_policy_document" "gui-bucket" {
     resources = [
       "arn:aws:s3:::${local.bucket-name}/*",
     ]
+  }
+
+  statement {
+    sid = "DenyOutdatedTLS"
+    principals {
+      type        = "AWS"
+      identifiers = ["*"]
+    }
+
+    actions = [
+      "s3:*"
+    ]
+
+    effect = "Allow"
+
+    resources = [
+      "arn:aws:s3:::${local.bucket-name}",
+      "arn:aws:s3:::${local.bucket-name}/*",
+    ]
+
+    condition {
+      test     = "NumericLessThan"
+      variable = "s3:TlsVersion"
+
+      values = [
+        "1.2"
+      ]
+    }
+  }
+
+  statement {
+    sid = "DenyInsecureConnections"
+    principals {
+      type        = "AWS"
+      identifiers = ["*"]
+    }
+
+    effect = "Deny"
+    actions = [
+      "s3:*"
+    ]
+
+    resources = [
+      "arn:aws:s3:::${local.bucket-name}",
+      "arn:aws:s3:::${local.bucket-name}/*",
+    ]
+
+    condition {
+      test     = "Bool"
+      variable = "aws:SecureTransport"
+
+      values = [
+        "false"
+      ]
+    }
   }
 }
 
@@ -86,7 +145,7 @@ resource "null_resource" "deploy" {
   provisioner "local-exec" {
     command = <<EOF
     aws s3 sync --quiet --delete --exclude ".git/*" \
-      ${var.files} s3://${module.gui-bucket.s3_bucket_id}/
+      ${var.files} s3://${aws_s3_bucket.gui.id}/
     EOF
   }
 
@@ -95,6 +154,6 @@ resource "null_resource" "deploy" {
   }
 
   depends_on = [
-    module.gui-bucket
+    aws_s3_bucket.gui
   ]
 }
