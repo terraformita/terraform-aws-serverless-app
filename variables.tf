@@ -11,6 +11,7 @@ variable "domain" {
 
 variable "domain-zone-id" {
   type        = string
+  default     = null
   description = "ID of Route 53 domain zone for the app"
 }
 
@@ -22,29 +23,27 @@ variable "certificate" {
 
 variable "gui" {
   type = object({
-    path       = string
-    entrypoint = string
-    source = object({
-      type  = string
-      files = string
-    })
+    path          = string
+    entrypoint    = string
+    path_to_files = string
   })
-  description = "GUI layer configuration - API path, default document (entrypoint), storage type, path to directory with source files."
+  description = "GUI layer configuration - API path, default document (entrypoint), path to directory with source files."
 }
 
 variable "api" {
   type = object({
     path = string
-    business-logic = object({
-      type     = string
-      resource = any
+    business_logic = object({
+      function_arn  = string
+      function_name = string
     })
   })
-  description = "API layer configuration - API path, business logic resource type (lambda, load balancer, etc) and ARN."
+  description = "API layer configuration - API path, ARN and name of the lambda function used as a business logic for the app."
 }
 
-variable "s3-logs-bucket" {
+variable "s3_access_logs_bucket" {
   type        = string
+  default     = null
   description = "Name of the S3 bucket collecting all S3 Bucket Access Logs"
 }
 
@@ -76,6 +75,7 @@ variable "log-retention-days" {
 
 variable "shared-kms-key" {
   type        = string
+  default     = null
   description = "ARN of the KMS key used for log data encryption"
 }
 
@@ -92,7 +92,7 @@ variable "enable-execution-logging" {
 }
 
 variable "log-full-requests" {
-    type = bool
-    default = false
-    description = "Enables or disables full request logging in execution logs. Logs are sent into execution logs group."
+  type        = bool
+  default     = false
+  description = "Enables or disables full request logging in execution logs. Logs are sent into execution logs group."
 }

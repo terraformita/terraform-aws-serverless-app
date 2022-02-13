@@ -1,3 +1,12 @@
+terraform {
+  required_providers {
+    aws = {
+      version = "3.74.2"
+      source = "hashicorp/aws"
+    }
+  }
+}
+
 locals {
   api-path-part = substr(var.api.path, 1, length(var.api.path) - 1)
 }
@@ -5,10 +14,10 @@ locals {
 module "gui" {
   source = "./gui"
 
-  name           = var.name
-  tags           = var.tags
-  files          = var.gui.source.files
-  s3-logs-bucket = var.s3-logs-bucket
+  name              = var.name
+  tags              = var.tags
+  files             = var.gui.path_to_files
+  s3_access_logs_bucket = var.s3_access_logs_bucket
 }
 
 module "api" {
@@ -33,9 +42,7 @@ module "api" {
     entrypoint   = var.gui.entrypoint
   }
 
-  business-logic = {
-    resource-arn = var.api.business-logic.resource.arn
-  }
+  business-logic = var.api.business_logic
 
   enable-access-logging    = var.enable-access-logging
   enable-execution-logging = var.enable-execution-logging
@@ -81,7 +88,7 @@ data "aws_iam_policy_document" "gui-bucket" {
 #### BUSINESS LOGIC CALLING PERMISSIONS
 resource "aws_lambda_permission" "business-logic-main" {
   action        = "lambda:InvokeFunction"
-  function_name = var.api.business-logic.resource.function-name
+  function_name = var.api.business_logic.function_name
   principal     = "apigateway.amazonaws.com"
 
   source_arn = "${module.api.execution-arn}/*/*/${local.api-path-part}"
@@ -90,7 +97,7 @@ resource "aws_lambda_permission" "business-logic-main" {
 resource "aws_lambda_permission" "business-logic-any" {
   count         = local.api-path-part == "*" ? 0 : 1
   action        = "lambda:InvokeFunction"
-  function_name = var.api.business-logic.resource.function-name
+  function_name = var.api.business_logic.function_name
   principal     = "apigateway.amazonaws.com"
 
   source_arn = "${module.api.execution-arn}/*/*/${local.api-path-part}/*"

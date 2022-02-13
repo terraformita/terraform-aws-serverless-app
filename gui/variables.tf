@@ -1,19 +1,20 @@
 variable "name" {
-    type = string
-    description = "Name of the GUI layer of the app."
+  type        = string
+  description = "Name of the GUI layer of the app."
 }
 
-variable "s3-logs-bucket" {
+variable "s3_access_logs_bucket" {
   type = string
-  description = "Name of the bucket into which all S3 access logs being collected in the target AWS environment"
+  default = null
+  description = "Name and prefix on the S3 bucket collecting all S3 Bucket Access Logs"
 }
 
 variable "files" {
-  type = string
+  type        = string
   description = "Path to files that will be uploaded to the S3 bucket"
 }
 
 variable "tags" {
-    type = map
-    description = "Tags to set on resources created by the app"
+  type        = map(any)
+  description = "Tags to set on resources created by the app"
 }

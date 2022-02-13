@@ -1,5 +1,7 @@
 locals {
   bucket-name = "${var.name}-gui"
+
+  s3_access_logging = (var.s3_access_logs_bucket == null) ? [] : [var.s3_access_logs_bucket]
 }
 
 #### S3 BUCKET FOR SERVING STATIC GUI CONTENT
@@ -20,9 +22,12 @@ resource "aws_s3_bucket" "gui" {
     }
   }
 
-  logging {
-    target_bucket = var.s3-logs-bucket
-    target_prefix = "${var.name}-gui/"
+  dynamic "logging" {
+    for_each = toset(local.s3_access_logging)
+    content {
+      target_bucket = each.value
+      target_prefix = "${var.name}-gui/"
+    }
   }
 
   tags = var.tags

@@ -62,7 +62,8 @@ variable "gui-integration" {
 
 variable "business-logic" {
     type = object({
-        resource-arn = string
+        function_name = string
+        function_arn = string
     })
     description = "Business logic reference (corresponding Lambda function ARN)"
 }

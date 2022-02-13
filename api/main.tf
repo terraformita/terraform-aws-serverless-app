@@ -10,7 +10,7 @@ locals {
     logging-level           = "INFO"
   }]
 
-  lambda-invocation-arn = "arn:${var.aws-partition}:apigateway:${var.region}:lambda:path/2015-03-31/functions/${var.business-logic.resource-arn}/invocations"
+  lambda-invocation-arn = "arn:${var.aws-partition}:apigateway:${var.region}:lambda:path/2015-03-31/functions/${var.business-logic.function_arn}/invocations"
 }
 
 #### REST API
@@ -43,6 +43,7 @@ resource "aws_api_gateway_domain_name" "api" {
 }
 
 resource "aws_route53_record" "api" {
+  count   = var.domain-zone-id != null ? 1 : 0
   zone_id = var.domain-zone-id
   name    = aws_api_gateway_domain_name.api.domain_name
   type    = "A"
