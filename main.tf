@@ -2,7 +2,7 @@ terraform {
   required_providers {
     aws = {
       version = "3.74.2"
-      source = "hashicorp/aws"
+      source  = "hashicorp/aws"
     }
   }
 }
@@ -14,9 +14,10 @@ locals {
 module "gui" {
   source = "./gui"
 
-  name              = var.name
-  tags              = var.tags
-  files             = var.gui.path_to_files
+  name  = var.name
+  tags  = var.tags
+  files = var.gui.path_to_files
+
   s3_access_logs_bucket = var.s3_access_logs_bucket
 }
 
