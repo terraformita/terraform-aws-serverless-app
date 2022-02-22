@@ -657,7 +657,7 @@ resource "aws_api_gateway_integration" "authorizer" {
   }
 
   depends_on = [
-    aws_api_gateway_method.proxy
+    aws_api_gateway_method.authorizer
   ]
 }
 
@@ -745,7 +745,7 @@ resource "aws_api_gateway_integration_response" "authorizer" {
   status_code = "200"
 
   depends_on = [
-    aws_api_gateway_integration.proxy
+    aws_api_gateway_integration.authorizer
   ]
 }
 
