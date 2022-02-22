@@ -177,7 +177,7 @@ data "archive_file" "auth_lambda" {
   type = "zip"
 
   source_dir  = "${path.module}/lambda/auth/code"
-  output_path = "${path.module}/lambda/auth/lambda_handler.zip"
+  output_path = "${path.module}/lambda/auth/lambda_handler.py.zip"
 }
 
 module "auth_lambda" {
@@ -193,7 +193,7 @@ module "auth_lambda" {
     name        = "cognito-authorizer"
     description = "Lambda authorizer for ${var.name} app, that performs user authentication and authorization via Amazon Cognito."
 
-    zip     = "${path.module}/lambda/auth/lambda_handler.zip"
+    zip     = "${path.module}/lambda/auth/lambda_handler.py.zip"
     handler = "lambda_handler.lambda_handler"
     runtime = "python3.7"
     memsize = "256"
