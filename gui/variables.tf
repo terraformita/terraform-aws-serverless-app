@@ -4,13 +4,16 @@ variable "name" {
 }
 
 variable "s3_access_logs_bucket" {
-  type = string
-  default = null
+  type        = string
+  default     = null
   description = "Name and prefix on the S3 bucket collecting all S3 Bucket Access Logs"
 }
 
 variable "files" {
-  type        = string
+  type     = string
+  nullable = true
+  default  = null
+
   description = "Path to files that will be uploaded to the S3 bucket"
 }
 

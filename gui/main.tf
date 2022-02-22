@@ -1,6 +1,5 @@
 locals {
-  bucket-name = "${var.name}-gui"
-
+  bucket_name = "${var.name}-gui"
   s3_access_logging = (var.s3_access_logs_bucket == null) ? [] : [var.s3_access_logs_bucket]
 }
 
@@ -26,7 +25,7 @@ resource "aws_s3_bucket" "gui" {
     for_each = toset(local.s3_access_logging)
     content {
       target_bucket = each.value
-      target_prefix = "${var.name}-gui/"
+      target_prefix = "${local.bucket_name}/"
     }
   }
 
@@ -48,10 +47,10 @@ resource "aws_s3_bucket_public_access_block" "gui" {
 
 resource "aws_s3_bucket_policy" "gui" {
   bucket = aws_s3_bucket.gui.id
-  policy = data.aws_iam_policy_document.gui-bucket.json
+  policy = data.aws_iam_policy_document.gui_bucket.json
 }
 
-data "aws_iam_policy_document" "gui-bucket" {
+data "aws_iam_policy_document" "gui_bucket" {
   statement {
     sid = "AllowAPIGWListBucket"
     principals {
@@ -65,7 +64,7 @@ data "aws_iam_policy_document" "gui-bucket" {
     ]
 
     resources = [
-      "arn:aws:s3:::${local.bucket-name}",
+      "arn:aws:s3:::${local.bucket_name}",
     ]
   }
 
@@ -82,7 +81,7 @@ data "aws_iam_policy_document" "gui-bucket" {
     ]
 
     resources = [
-      "arn:aws:s3:::${local.bucket-name}/*",
+      "arn:aws:s3:::${local.bucket_name}/*",
     ]
   }
 
@@ -100,8 +99,8 @@ data "aws_iam_policy_document" "gui-bucket" {
     effect = "Allow"
 
     resources = [
-      "arn:aws:s3:::${local.bucket-name}",
-      "arn:aws:s3:::${local.bucket-name}/*",
+      "arn:aws:s3:::${local.bucket_name}",
+      "arn:aws:s3:::${local.bucket_name}/*",
     ]
 
     condition {
@@ -127,8 +126,8 @@ data "aws_iam_policy_document" "gui-bucket" {
     ]
 
     resources = [
-      "arn:aws:s3:::${local.bucket-name}",
-      "arn:aws:s3:::${local.bucket-name}/*",
+      "arn:aws:s3:::${local.bucket_name}",
+      "arn:aws:s3:::${local.bucket_name}/*",
     ]
 
     condition {
@@ -151,6 +150,7 @@ resource "random_id" "trigger" {
 }
 
 resource "null_resource" "deploy" {
+  count = (var.files == null) ? 0 : 1
   provisioner "local-exec" {
     command = <<EOF
     aws s3 sync --quiet --delete --exclude ".git/*" \
