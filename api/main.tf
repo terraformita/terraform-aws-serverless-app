@@ -59,6 +59,13 @@ resource "aws_api_gateway_rest_api" "api" {
     types = ["REGIONAL"]
   }
 
+  binary_media_types = [
+    "image/jpeg",
+    "image/png",
+    "image/gif",
+    "application/pdf"
+  ]
+
   minimum_compression_size     = -1
   disable_execute_api_endpoint = true
 
@@ -84,6 +91,7 @@ resource "aws_route53_record" "api" {
   zone_id = var.domain_zone_id
   name    = aws_api_gateway_domain_name.api.domain_name
   type    = "A"
+
 
   alias {
     evaluate_target_health = true
