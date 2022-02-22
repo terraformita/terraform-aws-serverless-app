@@ -25,7 +25,7 @@ variable "gui" {
   type = object({
     path          = string
     entrypoint    = string
-    path_to_files = string
+    path_to_files = optional(string)
   })
   description = "GUI layer configuration - API path, default document (entrypoint), path to directory with source files."
 }
