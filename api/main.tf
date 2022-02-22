@@ -63,7 +63,8 @@ resource "aws_api_gateway_rest_api" "api" {
     "image/jpeg",
     "image/png",
     "image/gif",
-    "application/pdf"
+    "application/pdf",
+    "application/octet-stream"
   ]
 
   minimum_compression_size     = -1
