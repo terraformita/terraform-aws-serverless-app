@@ -10,7 +10,7 @@ variable "domain" {
   description = "Custom domain for the app"
 }
 
-variable "domain-zone-id" {
+variable "domain_zone_id" {
   type        = string
   description = "ID of Route 53 domain zone for the app"
 }
@@ -26,23 +26,23 @@ variable "name" {
   description = "Name of the API"
 }
 
-variable "log-retention-days" {
+variable "log_retention_days" {
   type        = number
   default     = 7
   description = "Period, in days, to store App access logs in CloudWatch"
 }
 
-variable "shared-kms-key" {
-    type = string
-    description = "ARN of the KMS key used for log data encryption"
+variable "kms_key_arn" {
+  type        = string
+  description = "ARN of the KMS key used for log data encryption"
 }
 
-variable "aws-partition" {
+variable "aws_partition" {
   type        = string
   description = "Name of current AWS partition"
 }
 
-variable "aws-account" {
+variable "aws_account_id" {
   type        = string
   description = "ID of current AWS account"
 }
@@ -52,41 +52,59 @@ variable "region" {
   description = "AWS Region"
 }
 
-variable "gui-integration" {
-    type = object({
-        s3-bucket-id = string
-        entrypoint = string
-    })
-    description = "GUI integration: ID of S3 bucket containing frontend files, and entrypoint file (for example: 'index.html')"
+variable "gui_integration" {
+  type = object({
+    s3_bucket_id = string
+    entrypoint   = string
+  })
+  description = "GUI integration: ID of S3 bucket containing frontend files, and entrypoint file (for example: 'index.html')"
 }
 
-variable "business-logic" {
-    type = object({
-        function_name = string
-        function_arn = string
-    })
-    description = "Business logic reference (corresponding Lambda function ARN)"
+variable "business_logic" {
+  type = object({
+    function_name = string
+    function_arn  = string
+  })
+  description = "Business logic reference (corresponding Lambda function ARN)"
 }
 
 variable "path" {
-    type = string
-    description = "Root path for the API (for exampple: '/api')"
+  type        = string
+  description = "Root path for the API (for exampple: '/api')"
 }
 
-variable "enable-access-logging" {
-    type = bool
-    default = true
-    description = "Enables or disables API access logging. Logs are sent into standard CloudWatch group."
+variable "logging_config" {
+  type = object({
+    enable_access_logging    = bool
+    enable_execution_logging = bool
+    log_full_requests        = bool
+    log_retention_days       = optional(number)
+  })
+
+  default = {
+    enable_access_logging    = true
+    enable_execution_logging = false
+    log_full_requests        = false
+    log_retention_days       = 7
+  }
+  description = "API logging configuration: logs are sent into standard CloudWatch group."
 }
 
-variable "enable-execution-logging" {
-    type = bool
-    default = false
-    description = "Enables or disables API execution logging. Logs are sent into standard CloudWatch group."
-}
+variable "auth_config" {
+  type = object({
+    enabled           = bool
+    auth_endpoint_path = optional(string)
+    login_url         = optional(string)
+    authorizer = optional(object({
+      function_arn = string
+      role_arn = string
+      role_id = string
+    }))
+  })
 
-variable "log-full-requests" {
-    type = bool
-    default = false
-    description = "Enables or disables full request logging in execution logs. Logs are sent into execution logs group."
+  default = {
+    enabled = false
+  }
+
+  description = "Authentication config for protecting the App and API with Cognito authentication."
 }

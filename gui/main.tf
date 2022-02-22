@@ -40,6 +40,10 @@ resource "aws_s3_bucket_public_access_block" "gui" {
   block_public_policy     = true
   ignore_public_acls      = true
   restrict_public_buckets = true
+
+  depends_on = [
+    aws_s3_bucket_policy.gui
+  ]
 }
 
 resource "aws_s3_bucket_policy" "gui" {
