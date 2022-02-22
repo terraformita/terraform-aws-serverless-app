@@ -1,5 +1,5 @@
 locals {
-  bucket_name = "${var.name}-gui"
+  bucket_name       = "${var.name}-gui"
   s3_access_logging = (var.s3_access_logs_bucket == null) ? [] : [var.s3_access_logs_bucket]
 }
 
@@ -142,6 +142,7 @@ data "aws_iam_policy_document" "gui_bucket" {
 }
 
 resource "random_id" "trigger" {
+  count       = (var.files == null) ? 0 : 1
   byte_length = 8
 
   keepers = {
@@ -159,7 +160,7 @@ resource "null_resource" "deploy" {
   }
 
   triggers = {
-    update = element(concat(random_id.trigger.*.hex, []), 0)
+    update = element(concat(random_id.trigger[0].*.hex, []), 0)
   }
 
   depends_on = [
