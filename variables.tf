@@ -98,36 +98,45 @@ variable "log_full_requests" {
 }
 
 variable "disable_aws_url" {
-  type = bool
-  default = false
+  type        = bool
+  default     = false
   description = "Disables AWS-provided URL for the App and its API."
 }
 
 variable "auth_config" {
   type = object({
-    enabled = bool
-    log_level = optional(string)
+    enabled              = bool
+    log_level            = optional(string)
     auth_endpoint_prefix = optional(string)
     cognito = optional(object({
-      domain = string
+      domain      = string
       userpool_id = string
-      client_id = string
-      secret = string
+      client_id   = string
+      secret      = string
     }))
   })
 
   default = {
-    enabled = false
-    log_level = "INFO"
+    enabled              = false
+    log_level            = "INFO"
     auth_endpoint_prefix = "cognito-idp-response"
 
     cognito = {
-      domain = ""
+      domain      = ""
       userpool_id = ""
-      client_id = ""
-      secret = ""
+      client_id   = ""
+      secret      = ""
     }
   }
 
   description = "Authentication config for protecting the App and API with Cognito authentication."
+}
+
+variable "binary_media_types" {
+  type     = list(string)
+  nullable = false
+  default = [
+    "*/*"
+  ]
+  description = "List of MIME types to be treated as binary for downloading"
 }

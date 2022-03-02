@@ -72,7 +72,9 @@ module "api" {
     entrypoint   = var.gui.entrypoint
   }
 
-  business_logic = var.api.business_logic
+  business_logic     = var.api.business_logic
+  binary_media_types = var.binary_media_types
+
   auth_config = {
     enabled            = local.auth_enabled
     login_url          = "${local.cognito_url}/${local.login_path}"

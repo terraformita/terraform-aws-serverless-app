@@ -59,13 +59,7 @@ resource "aws_api_gateway_rest_api" "api" {
     types = ["REGIONAL"]
   }
 
-  binary_media_types = [
-    "image/jpeg",
-    "image/png",
-    "image/gif",
-    "application/pdf",
-    "application/octet-stream"
-  ]
+  binary_media_types = var.binary_media_types
 
   minimum_compression_size     = -1
   disable_execute_api_endpoint = true

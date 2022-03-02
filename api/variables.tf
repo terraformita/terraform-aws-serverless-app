@@ -92,13 +92,13 @@ variable "logging_config" {
 
 variable "auth_config" {
   type = object({
-    enabled           = bool
+    enabled            = bool
     auth_endpoint_path = optional(string)
-    login_url         = optional(string)
+    login_url          = optional(string)
     authorizer = optional(object({
       function_arn = string
-      role_arn = string
-      role_id = string
+      role_arn     = string
+      role_id      = string
     }))
   })
 
@@ -107,4 +107,13 @@ variable "auth_config" {
   }
 
   description = "Authentication config for protecting the App and API with Cognito authentication."
+}
+
+variable "binary_media_types" {
+  type     = list(string)
+  nullable = false
+  default = [
+    "*/*"
+  ]
+  description = "List of MIME types to be treated as binary for downloading"
 }
