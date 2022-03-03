@@ -86,5 +86,6 @@ module "serverless_app" {
     # map of tags
   }
 }
+```
 
 **NB!** Make sure to specify correct module version in the `version` parameter.
