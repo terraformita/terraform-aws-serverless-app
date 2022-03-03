@@ -1,6 +1,6 @@
 
 # AWS Serverless App Module for React / Angular / Vue Websites
-Terraform module to spin up React/Angular/Vue Serverless App based on AWS API Gateway, with S3 bucket for Client App (GUI) and Lambda function as a Server App (API).
+Terraform module to spin up React/Angular/Vue Serverless App based on AWS API Gateway, with S3 bucket for Client App (GUI) and Lambda function as a Backend App (API).
 
 Module Supports:
 - Custom Domain Name (based on AWS Route 53 or external)
