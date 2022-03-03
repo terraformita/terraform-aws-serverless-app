@@ -45,9 +45,11 @@ module "serverless_app" {
   domain      = "website.example.com"
   certificate = "ARN of AWS ACM Certificate"
 
-  domain-zone-id = "(Optional) ID of AWS Route 53 hosted domain zone"
-  s3-logs-bucket = "(Optional, Advanced Feature) ARN of S3 bucket used for S3 Access Logging"
-  shared-kms-key = "(Optional, Advanced Feature) ARN of KMS Key to encrypt CloudWatch logs"
+  domain_zone_id        = "(Optional) ID of AWS Route 53 hosted domain zone"
+  s3_access_logs_bucket = "(Optional, Advanced Feature) ARN of S3 bucket used for S3 Access Logging"
+
+  kms_key_arn        = "(Optional, Advanced Feature) ARN of KMS Key to encrypt CloudWatch logs"
+  log_retention_days = "(Optional, Advanced Feature) Period, in days, to store App access logs in CloudWatch. Defaults to 7"
 
   region         = "Target AWS Region (example: us-east-1)"
   aws_partition  = "AWS Partition (example: aws)"
@@ -71,19 +73,25 @@ module "serverless_app" {
 
   auth_config = {
     # Optional. AWS Cognito Configuration for User Authentication
-    enabled = true|false # Enables or disables Cognito-based authentication
+    enabled   = true|false # Enables or disables Cognito-based authentication
+    log_level = "API Logging Level (INFO or ERROR). Defaults to INFO"
+
+    auth_endpoint_prefix = "(Advanced Feature). URL Prefix for OAuth callback endpoint. Defaults to: cognito-idp-response"
 
     cognito = {
-      domain = "Name of AWS Cognito Domain"
+      domain      = "Name of AWS Cognito Domain"
       userpool_id = "ID of Cognito User Pool"
-      client_id = "ID of Userpool Client"
-      secret = "Secret of Userpool Client"
+      client_id   = "ID of Userpool Client"
+      secret      = "Secret of Userpool Client"
     }
   }
 
   binary_media_types       = ["List", "of", "binary", "MIME", "types", "Defaults", "to", "*/*"]
-  enable_access_logging    = true|false # Enables or disables AWS API Gateway Access Logging
-  enable_execution_logging = true|false # Enables or disables AWS API Gateway Execution Logging
+  enable_access_logging    = true|false # Enables AWS API Gateway Access Logging
+  enable_execution_logging = true|false # Enables AWS API Gateway Execution Logging
+  log_full_requests        = true|false # Enables logging of full requests (payloads)
+
+  disable_aws_url = true|false # UNSUPPORTED - to be implemented in the future versions. When custom domain name is used for the API, indicates if AWS-provided API Gateway URL should be disabled.
 
   tags = {
     # map of tags
