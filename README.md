@@ -2,30 +2,30 @@
 # AWS Serverless App Module for React / Angular / Vue Websites
 Terraform module to spin up React/Angular/Vue Serverless App based on AWS API Gateway, with S3 bucket for Client App (GUI) and Lambda function as a Server App (API).
 
-**Module supports:**
+Module Supports:
 - Custom Domain Name (based on AWS Route 53 or external)
 - Web SSL Certificate (based on AWS ACM)
 - User Authentication (based on AWS Cognito)
 
-### Features
-**Main Features**
+## Features
+### Main Features
 - Creates S3 bucket for Client App (GUI)
 - Creates AWS API Gateway with ACM SSL Certificate
 - Maps S3 bucket to API Root `/`
 - Maps provided AWS Lambda function to desired API Path (example: `/api`, or `/backend`, or anything else)
 
-**Optional Features**
+### Optional Features
 - Creates AWS Route 53 Record for Custom Domain
 - Protects the whole App with AWS Cognito-based User Authentication
 - Turns On API Execution Logs (including request logs) on AWS CloudWatch
 
-**Data Encryption**
+### Data Encryption
 - BYOKMS: "Bring Your Own KMS Key" for CloudWatch Log Group logs encryption
 
-### Infrastructure
+## Infrastructure
 ![Serverless App Module Infrastructure](https://user-images.githubusercontent.com/1422584/156475917-9bc87d9d-d656-480a-959e-9da2836568e3.png)
 
-### Pre-Requisites
+## Pre-Requisites
 Before using the module:
 - Should create ACM Certificate
 - (if user auth required) Should create AWS Cognito User Pool and Userpool Client
@@ -92,3 +92,17 @@ module "serverless_app" {
 ```
 
 **NB!** Make sure to specify correct module version in the `version` parameter.
+
+## Post-Deployment Steps
+
+**Needed Only if You Turn ON User Authentication**
+- Visit AWS API Gateway console
+- Find the API created by the module
+- Find the Authentication API Endpoint (will start with "cognito-idp-response-..." unless you specified a custom prefix)
+- Copy the Authentication API Endpoint path
+
+- Open AWS Cognito console
+- Locate your App Client used for User Authentication
+- Change "Redirect URL" to `https://{Your_Serverless_App_Domain}/{Authentication_API_Endpoint_Path}`
+
+This manual step will be automated in the future versions of the module.
