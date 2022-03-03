@@ -2,7 +2,7 @@
 # AWS Serverless App Module for React / Angular / Vue Websites
 Terraform module to spin up React/Angular/Vue Serverless App based on AWS API Gateway, with S3 bucket for Client App (GUI) and Lambda function as a Server App (API).
 
-Module supports:
+**Module supports:**
 - Custom Domain Name (based on AWS Route 53 or external)
 - Web SSL Certificate (based on AWS ACM)
 - User Authentication (based on AWS Cognito)
@@ -21,6 +21,9 @@ Module supports:
 
 **Data Encryption**
 - BYOKMS: "Bring Your Own KMS Key" for CloudWatch Log Group logs encryption
+
+### Infrastructure
+![Serverless App Module Infrastructure](https://user-images.githubusercontent.com/1422584/156475917-9bc87d9d-d656-480a-959e-9da2836568e3.png)
 
 ### Pre-Requisites
 Before using the module:
