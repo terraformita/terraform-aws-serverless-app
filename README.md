@@ -1,4 +1,3 @@
-
 # AWS Serverless App Module for React / Angular / Vue Websites
 Terraform module to spin up React/Angular/Vue Serverless App based on AWS API Gateway, with S3 bucket for Client App (GUI) and Lambda function as a Backend App (API).
 
@@ -78,20 +77,28 @@ module "serverless_app" {
 
     auth_endpoint_prefix = "(Advanced Feature). URL Prefix for OAuth callback endpoint. Defaults to: cognito-idp-response"
 
+    create_cognito_client = true|false # Indicates if module should create Cognito Client for user authentication. Defaults to true.
+
     cognito = {
       domain      = "Name of AWS Cognito Domain"
       userpool_id = "ID of Cognito User Pool"
-      client_id   = "ID of Userpool Client"
-      secret      = "Secret of Userpool Client"
+      client_id   = "Optional. ID of Existing Cognito Userpool Client"
+      secret      = "Optional. Secret of Existing Userpool Client"
+
+      refresh_token_validity = "Optional. Refresh token validity in MINUTES. Defaults to 1440 (24 hrs)"
+      access_token_validity  = "Optional. Access token validity in MINUTES. Defaults to 60 (1 hr)"
+      id_token_validity      = "Optional. ID token validity in MINUTES. Defaults to 60 (1 hr)"
+
+      supported_identity_providers = [ "List", "of", "identity", "providers", "supported", "by", "the", "client" ]
     }
   }
 
   binary_media_types       = ["List", "of", "binary", "MIME", "types", "Defaults", "to", "*/*"]
-  enable_access_logging    = true|false # Enables AWS API Gateway Access Logging
-  enable_execution_logging = true|false # Enables AWS API Gateway Execution Logging
-  log_full_requests        = true|false # Enables logging of full requests (payloads)
+  enable_access_logging    = true|false # Enables AWS API Gateway Access Logging. Defaults to true.
+  enable_execution_logging = true|false # Enables AWS API Gateway Execution Logging. Defaults to true.
+  log_full_requests        = true|false # Enables logging of full requests (payloads). Defaults to false.
 
-  disable_aws_url = true|false # UNSUPPORTED - to be implemented in the future versions. When custom domain name is used for the API, indicates if AWS-provided API Gateway URL should be disabled.
+  disable_aws_url = true|false # Indicates if AWS-provided API Gateway URL should be disabled. Defaults to false
 
   tags = {
     # map of tags
@@ -103,14 +110,19 @@ module "serverless_app" {
 
 ## Post-Deployment Steps
 
-**Needed Only if You Turn ON User Authentication**
+Usually no post-deployment steps are required. However, if you chose custom 
+### When These Steps Needed
+
+- You turn on User Authentication via Cognito
+- You chose to not let the module create Cognito Client
+
+### What Needs To Be Done
 - Visit AWS API Gateway console
 - Find the API created by the module
-- Find the Authentication API Endpoint (will start with "cognito-idp-response-..." unless you specified a custom prefix)
-- Copy the Authentication API Endpoint path
+- Find the Authentication API Endpoint (`api_gateway.auth_endpoint` output variable)
+- Copy the Authentication API Endpoint path to Clipboard
 
-- Open AWS Cognito console
+- Open AWS Cognito Console
 - Locate your App Client used for User Authentication
-- Change "Redirect URL" to `https://{Your_Serverless_App_Domain}/{Authentication_API_Endpoint_Path}`
+- Change "Redirect URL" to copied API Endpoint
 
-This manual step will be automated in the future versions of the module.

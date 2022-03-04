@@ -105,30 +105,26 @@ variable "disable_aws_url" {
 
 variable "auth_config" {
   type = object({
-    enabled              = bool
     log_level            = optional(string)
     auth_endpoint_prefix = optional(string)
+
+    create_cognito_client = bool
+
     cognito = optional(object({
       domain      = string
       userpool_id = string
-      client_id   = string
-      secret      = string
+      client_id   = optional(string)
+      secret      = optional(string)
+
+      refresh_token_validity = optional(string)
+      access_token_validity  = optional(string)
+      id_token_validity      = optional(string)
+
+      supported_identity_providers = optional(list(string))
     }))
   })
 
-  default = {
-    enabled              = false
-    log_level            = "INFO"
-    auth_endpoint_prefix = "cognito-idp-response"
-
-    cognito = {
-      domain      = ""
-      userpool_id = ""
-      client_id   = ""
-      secret      = ""
-    }
-  }
-
+  default     = null
   description = "Authentication config for protecting the App and API with Cognito authentication."
 }
 

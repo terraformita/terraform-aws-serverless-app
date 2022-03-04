@@ -62,7 +62,7 @@ resource "aws_api_gateway_rest_api" "api" {
   binary_media_types = var.binary_media_types
 
   minimum_compression_size     = -1
-  disable_execute_api_endpoint = true
+  disable_execute_api_endpoint = var.disable_aws_url
 
   tags = var.tags
 }
@@ -96,32 +96,19 @@ resource "aws_route53_record" "api" {
 }
 
 #### API DEPLOYMENT
+resource "random_id" "trigger" {
+  byte_length = 8
+
+  keepers = {
+    uuid = uuid()
+  }
+}
+
 resource "aws_api_gateway_deployment" "deployment" {
   rest_api_id = aws_api_gateway_rest_api.api.id
 
   triggers = {
-    redeployment = sha1(jsonencode([
-      aws_api_gateway_rest_api.api.id,
-      aws_api_gateway_rest_api.api.root_resource_id,
-      aws_api_gateway_resource.gui_item.id,
-      aws_api_gateway_resource.api_item.id,
-      aws_api_gateway_resource.proxy.id,
-      aws_api_gateway_method.root_get.id,
-      aws_api_gateway_method.gui_item_get.id,
-      aws_api_gateway_method.gui_item_options.id,
-      aws_api_gateway_method.api_item.id,
-      aws_api_gateway_method.proxy.id,
-      aws_api_gateway_integration.root_get.id,
-      aws_api_gateway_integration.gui_item_get.id,
-      aws_api_gateway_integration.gui_item_options.id,
-      aws_api_gateway_integration.api_item.id,
-      aws_api_gateway_integration.proxy.id,
-      aws_api_gateway_authorizer.authorizer[*].id,
-      aws_api_gateway_resource.authorizer[*].id,
-      aws_api_gateway_method.authorizer[*].id,
-      aws_api_gateway_integration.authorizer[*].id,
-      aws_api_gateway_integration_response.authorizer[*].id
-    ]))
+    redeployment = element(concat(random_id.trigger.*.hex, []), 0)
   }
 
   lifecycle {

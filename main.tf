@@ -10,15 +10,20 @@ terraform {
 }
 
 locals {
-  api_path           = substr(var.api.path, 1, length(var.api.path) - 1)
-  auth_config        = module.auth_defaults.output
-  auth_endpoint_path = "${local.auth_config.auth_endpoint_prefix}-${random_id.id.hex}"
+  api_path = substr(var.api.path, 1, length(var.api.path) - 1)
 
-  auth_config_present = !(var.auth_config == null)
-  auth_enabled        = local.auth_config_present ? var.auth_config.enabled : false
+  auth_config    = module.auth_defaults.output
+  cognito_config = module.cognito_defaults.output
 
-  cognito_url = "https://${local.auth_config.cognito.domain}.auth.${var.region}.amazoncognito.com"
-  login_path  = "login?response_type=code&client_id=${local.auth_config.cognito.client_id}&redirect_uri=https://${var.domain}/${local.auth_endpoint_path}"
+  auth_endpoint_path = local.auth_enabled ? "${local.auth_config.auth_endpoint_prefix}-${random_id.id.hex}" : ""
+  auth_endpoint      = local.auth_enabled ? "https://${var.domain}/${local.auth_endpoint_path}" : ""
+
+  auth_enabled        = !(var.auth_config == null)
+  need_cognito_client = (local.auth_enabled && local.auth_config.create_cognito_client)
+  cognito_client_id   = local.need_cognito_client ? aws_cognito_user_pool_client.idp_client[0].id : local.cognito_config.client_id
+
+  cognito_url = "https://${local.cognito_config.domain}.auth.${var.region}.amazoncognito.com"
+  login_path  = "login?response_type=code&client_id=${local.cognito_client_id}&redirect_uri=https://${var.domain}/${local.auth_endpoint_path}"
 }
 
 module "auth_defaults" {
@@ -27,16 +32,30 @@ module "auth_defaults" {
 
   input = var.auth_config
   defaults = {
-    enabled              = false
-    log_level            = "INFO"
-    auth_endpoint_prefix = "cognito-idp-response"
+    cognito   = null
+    log_level = "INFO"
 
-    cognito = {
-      domain      = ""
-      userpool_id = ""
-      client_id   = ""
-      secret      = ""
-    }
+    create_cognito_client = true
+    auth_endpoint_prefix  = "cognito-idp-response"
+  }
+}
+
+module "cognito_defaults" {
+  source  = "terraformita/defaults/local"
+  version = "0.0.6"
+
+  input = local.auth_config.cognito
+  defaults = {
+    client_id   = ""
+    domain      = ""
+    secret      = ""
+    userpool_id = ""
+
+    refresh_token_validity = 1440 # 24 hours
+    access_token_validity  = 60   # 1 hour
+    id_token_validity      = 60   # 1 hour
+
+    supported_identity_providers = null
   }
 }
 
@@ -60,10 +79,11 @@ module "api" {
   aws_account_id = var.aws_account_id
   region         = var.region
 
-  domain         = var.domain
-  domain_zone_id = var.domain_zone_id
-  certificate    = var.certificate
-  kms_key_arn    = var.kms_key_arn
+  domain          = var.domain
+  domain_zone_id  = var.domain_zone_id
+  disable_aws_url = var.disable_aws_url
+  certificate     = var.certificate
+  kms_key_arn     = var.kms_key_arn
 
   log_retention_days = var.log_retention_days
 
@@ -98,6 +118,46 @@ module "api" {
   depends_on = [
     module.auth_lambda
   ]
+}
+
+#### COGNITO USER POOL CLIENT
+resource "aws_cognito_user_pool_client" "idp_client" {
+  count = local.need_cognito_client ? 1 : 0
+  name  = "${var.name}-cognito-idp-client"
+
+  user_pool_id    = local.cognito_config.userpool_id
+  generate_secret = true
+
+  explicit_auth_flows = [
+    "ALLOW_CUSTOM_AUTH",
+    "ALLOW_REFRESH_TOKEN_AUTH",
+    "ALLOW_USER_PASSWORD_AUTH"
+  ]
+
+  token_validity_units {
+    access_token  = "minutes"
+    id_token      = "minutes"
+    refresh_token = "minutes"
+  }
+
+  refresh_token_validity = local.cognito_config.refresh_token_validity
+  access_token_validity  = local.cognito_config.access_token_validity
+  id_token_validity      = local.cognito_config.id_token_validity
+
+  allowed_oauth_scopes = [
+    "phone",
+    "email",
+    "openid",
+    "profile"
+  ]
+
+  allowed_oauth_flows  = ["code"]
+  callback_urls        = [local.auth_endpoint]
+  default_redirect_uri = local.auth_endpoint
+
+  enable_token_revocation       = true
+  prevent_user_existence_errors = "ENABLED"
+  supported_identity_providers  = local.cognito_config.supported_identity_providers
 }
 
 #### API ACCESS TO GUI BUCKET
@@ -202,17 +262,14 @@ module "auth_lambda" {
 
     env = {
       BASE_URI             = "https://${var.domain}"
-      CLIENT_ID            = var.auth_config.cognito.client_id
-      CLIENT_SECRET        = var.auth_config.cognito.secret
-      COGNITO_DOMAIN       = var.auth_config.cognito.domain
-      COGNITO_USER_POOL_ID = var.auth_config.cognito.userpool_id
+      CLIENT_ID            = local.need_cognito_client ? aws_cognito_user_pool_client.idp_client[0].id : local.cognito_config.client_id
+      CLIENT_SECRET        = local.need_cognito_client ? nonsensitive(aws_cognito_user_pool_client.idp_client[0].client_secret) : local.cognito_config.secret
+      COGNITO_DOMAIN       = local.cognito_config.domain
+      COGNITO_USER_POOL_ID = local.cognito_config.userpool_id
       LOG_LEVEL            = "INFO"
       REDIRECT_URI         = "/${local.auth_endpoint_path}"
       REGION               = "us-east-1"
       RETURN_URI           = "/${var.gui.entrypoint}"
-    }
-
-    policies = {
     }
   }
 

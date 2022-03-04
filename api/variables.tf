@@ -1,4 +1,3 @@
-
 variable "tags" {
   type        = map(any)
   description = "Resource tags to be attached to all resources."
@@ -116,4 +115,10 @@ variable "binary_media_types" {
     "*/*"
   ]
   description = "List of MIME types to be treated as binary for downloading"
+}
+
+variable "disable_aws_url" {
+  type        = bool
+  default     = false
+  description = "Disables AWS-provided URL for the App and its API."
 }
