@@ -110,7 +110,8 @@ module "serverless_app" {
 
 ## Post-Deployment Steps
 
-Usually no post-deployment steps are required. However, if you chose custom 
+Usually no post-deployment steps are required. However, if you chose to use existing AWS Cognito Userpool Client instead of letting the module to create the new one, the below post-deployment steps are needed to make everything work.
+
 ### When These Steps Needed
 
 - You turn on User Authentication via Cognito
