@@ -151,9 +151,9 @@ resource "aws_cognito_user_pool_client" "idp_client" {
     "profile"
   ]
 
-  allowed_oauth_flows  = ["code", "client_credentials"]
+  allowed_oauth_flows  = ["code"]
   callback_urls        = [local.auth_endpoint]
-  default_redirect_uri = local.auth_endpoint
+  # default_redirect_uri = local.auth_endpoint
 
   enable_token_revocation       = true
   prevent_user_existence_errors = "ENABLED"
