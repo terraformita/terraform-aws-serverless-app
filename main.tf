@@ -55,7 +55,7 @@ module "cognito_defaults" {
     access_token_validity  = 60   # 1 hour
     id_token_validity      = 60   # 1 hour
 
-    supported_identity_providers = null
+    supported_identity_providers = [] 
   }
 }
 
@@ -159,7 +159,10 @@ resource "aws_cognito_user_pool_client" "idp_client" {
 
   enable_token_revocation       = true
   prevent_user_existence_errors = "ENABLED"
-  supported_identity_providers  = local.cognito_config.supported_identity_providers
+  supported_identity_providers  = concat(
+    local.cognito_config.supported_identity_providers,
+    ["COGNITO"]
+  )
 }
 
 #### API ACCESS TO GUI BUCKET
