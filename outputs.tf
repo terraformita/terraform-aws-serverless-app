@@ -6,6 +6,7 @@ output "gui_bucket" {
 output "api_gateway" {
   value = {
     aws_url           = module.api.aws_url
+    stage             = module.api.stage
     custom_domain_url = module.api.url
     user_role_arn     = module.api.user_role.arn
     execution_arn     = module.api.execution_arn

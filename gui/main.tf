@@ -5,31 +5,40 @@ locals {
 
 #### S3 BUCKET FOR SERVING STATIC GUI CONTENT
 resource "aws_s3_bucket" "gui" {
-  bucket        = "${var.name}-gui"
-  acl           = "private"
+  bucket        = local.bucket_name
   force_destroy = true
 
-  versioning {
-    enabled = true
-  }
-
-  server_side_encryption_configuration {
-    rule {
-      apply_server_side_encryption_by_default {
-        sse_algorithm = "AES256"
-      }
-    }
-  }
-
-  dynamic "logging" {
-    for_each = toset(local.s3_access_logging)
-    content {
-      target_bucket = each.value
-      target_prefix = "${local.bucket_name}/"
-    }
-  }
-
   tags = var.tags
+}
+
+resource "aws_s3_bucket_acl" "gui" {
+  bucket = aws_s3_bucket.gui.id
+  acl    = "private"
+}
+
+resource "aws_s3_bucket_logging" "gui" {
+  count  = var.s3_access_logs_bucket == null ? 0 : 1
+  bucket = aws_s3_bucket.gui.id
+
+  target_bucket = var.s3_access_logs_bucket
+  target_prefix = "${local.bucket_name}/"
+}
+
+resource "aws_s3_bucket_versioning" "gui" {
+  bucket = aws_s3_bucket.gui.id
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "gui" {
+  bucket = aws_s3_bucket.gui.bucket
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
+  }
 }
 
 resource "aws_s3_bucket_public_access_block" "gui" {

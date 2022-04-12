@@ -1,11 +1,4 @@
 terraform {
-  required_providers {
-    aws = {
-      version = "3.74.2"
-      source  = "hashicorp/aws"
-    }
-  }
-
   experiments = [module_variable_optional_attrs]
 }
 
@@ -23,7 +16,7 @@ locals {
   cognito_client_id   = local.need_cognito_client ? aws_cognito_user_pool_client.idp_client[0].id : local.cognito_config.client_id
 
   cognito_url = "https://${local.cognito_config.domain}.auth.${var.region}.amazoncognito.com"
-  login_path  = "login?response_type=code&client_id=${local.cognito_client_id}&redirect_uri=https://${var.domain}/${local.auth_endpoint_path}"
+  login_path  = local.auth_enabled ? "login?response_type=code&client_id=${local.cognito_client_id}&redirect_uri=https://${var.domain}/${local.auth_endpoint_path}" : ""
 }
 
 module "auth_defaults" {
@@ -55,7 +48,7 @@ module "cognito_defaults" {
     access_token_validity  = 60   # 1 hour
     id_token_validity      = 60   # 1 hour
 
-    supported_identity_providers = [] 
+    supported_identity_providers = []
   }
 }
 
@@ -77,6 +70,7 @@ module "api" {
 
   aws_partition  = var.aws_partition
   aws_account_id = var.aws_account_id
+  stage_name     = var.api.stage_name
   region         = var.region
 
   domain          = var.domain
@@ -159,7 +153,7 @@ resource "aws_cognito_user_pool_client" "idp_client" {
 
   enable_token_revocation       = true
   prevent_user_existence_errors = "ENABLED"
-  supported_identity_providers  = concat(
+  supported_identity_providers = concat(
     local.cognito_config.supported_identity_providers,
     ["COGNITO"]
   )

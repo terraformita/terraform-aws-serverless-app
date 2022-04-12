@@ -122,3 +122,10 @@ variable "disable_aws_url" {
   default     = false
   description = "Disables AWS-provided URL for the App and its API."
 }
+
+variable "stage_name" {
+  type        = string
+  default     = "dev"
+  nullable    = false
+  description = "API stage name (dev, staging, prod, etc)"
+}

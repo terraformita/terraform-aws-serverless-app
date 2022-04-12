@@ -19,5 +19,9 @@ output "aws_url" {
 }
 
 output "url" {
-  value = "https://${aws_api_gateway_domain_name.api.regional_domain_name}"
+  value = var.domain == null ? "" : "https://${aws_api_gateway_domain_name.api[0].regional_domain_name}"
+}
+
+output "stage" {
+  value = aws_api_gateway_stage.stage.stage_name
 }
