@@ -1,5 +1,5 @@
 locals {
-  bucket_name       = "${var.name}-gui"
+  bucket_name       = "${var.name}-${var.stage_name}-gui"
   s3_access_logging = (var.s3_access_logs_bucket == null) ? [] : [var.s3_access_logs_bucket]
 }
 

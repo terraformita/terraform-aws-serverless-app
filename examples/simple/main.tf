@@ -1,39 +1,49 @@
 provider "aws" {
-  region = local.region
+  region = "us-east-1"
 }
 
-resource "random_pet" "stage_name" {}
-resource "random_pet" "function_name" {}
-
-data "aws_caller_identity" "current" {}
-data "aws_partition" "current" {}
+resource "random_pet" "app_name" {}
+resource "random_pet" "backend_name" {}
 
 locals {
-  api_stage = "dev"
+  stage_name = "dev"
+
+  app_name = random_pet.app_name.id
+  api_name = random_pet.backend_name.id
 
   tags = {
-    Name = "${random_pet.stage_name.id}-${random_pet.function_name.id}"
+    Name = "${local.app_name}-${local.stage_name}"
   }
 }
 
 module "app" {
-  source = "../../"
-  name   = random_pet.stage_name.id
+  source     = "../../"
+  name       = local.app_name
+  stage_name = local.stage_name
 
-  api = {
-    path       = "/api"
-    stage_name = local.api_stage
+  frontend = {
+    path = "/"
 
-    business_logic = {
-      function_arn  = module.backend.lambda_function.arn
-      function_name = module.backend.lambda_function.function_name
-    }
+    description = "Sample Frontend App"
+    entrypoint  = "index.html"
+    source      = "${path.module}/frontend/public"
   }
 
-  gui = {
-    path          = "/"
-    entrypoint    = "index.html"
-    path_to_files = "${path.module}/frontend/public"
+  backend = {
+    path = "/api"
+
+    name        = local.api_name
+    description = "Sample API"
+
+    source     = data.archive_file.backend.output_path
+    entrypoint = "index.handler"
+    runtime    = "nodejs12.x"
+    memory_mb  = 128
+
+    modules = [{
+      source  = data.archive_file.modules.output_path
+      runtime = "nodejs12.x"
+    }]
   }
 
   enable_access_logging    = true
@@ -42,7 +52,8 @@ module "app" {
   tags = local.tags
 
   depends_on = [
-    module.backend
+    data.archive_file.backend,
+    data.archive_file.modules
   ]
 }
 
@@ -54,7 +65,7 @@ data "archive_file" "backend" {
   output_path = "${path.module}/backend/backend.zip"
 }
 
-data "archive_file" "layer" {
+data "archive_file" "modules" {
   type = "zip"
 
   source_dir  = "${path.module}/backend/nodejs"
@@ -62,39 +73,10 @@ data "archive_file" "layer" {
   output_path = "${path.module}/backend/layer.zip"
 }
 
-module "backend" {
-  source = "../../../terraform-aws-lambda"
-  # version = "0.1.3"
-
-  stage = random_pet.stage_name.id
-  tags  = local.tags
-
-  # Example lambda function configuration
-  function = {
-    name        = random_pet.function_name.id
-    description = "Sample API"
-
-    zip     = "${path.module}/backend/backend.zip"
-    handler = "index.handler"
-    runtime = "nodejs12.x"
-    memsize = 128
-  }
-
-  layer = {
-    zip                 = "${path.module}/backend/layer.zip"
-    compatible_runtimes = ["nodejs12.x"]
-  }
-
-  depends_on = [
-    data.archive_file.backend,
-    data.archive_file.layer
-  ]
+output "frontend_storage" {
+  value = module.app.frontend_storage
 }
 
-output "gui" {
-  value = module.app.gui_bucket
-}
-
-output "api" {
-  value = module.app.api_gateway
+output "deployment" {
+  value = module.app.deployment
 }

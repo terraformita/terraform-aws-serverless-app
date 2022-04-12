@@ -1,11 +1,11 @@
-output "gui_bucket" {
+output "frontend_storage" {
   value       = module.gui.bucket
   description = "Id and ARN of S3 bucket with app's frontend"
 }
 
-output "api_gateway" {
+output "deployment" {
   value = {
-    aws_url           = "${module.api.aws_url}/${module.api.stage}"
+    aws_url           = "${module.api.aws_url}${module.api.stage}"
     stage             = module.api.stage
     custom_domain_url = module.api.url
     user_role_arn     = module.api.user_role.arn

@@ -3,7 +3,7 @@ terraform {
 }
 
 locals {
-  api_path = substr(var.api.path, 1, length(var.api.path) - 1)
+  api_path = substr(var.backend.path, 1, length(var.backend.path) - 1)
 
   auth_config    = module.auth_defaults.output
   cognito_config = module.cognito_defaults.output
@@ -58,9 +58,11 @@ module "cognito_defaults" {
 module "gui" {
   source = "./gui"
 
-  name  = var.name
+  name       = var.name
+  stage_name = var.stage_name
+
   tags  = var.tags
-  files = var.gui.path_to_files
+  files = var.frontend.source
 
   s3_access_logs_bucket = var.s3_access_logs_bucket
 }
@@ -73,7 +75,7 @@ module "api" {
 
   aws_partition  = var.aws_partition == null ? data.aws_partition.current.partition : var.aws_partition
   aws_account_id = var.aws_account_id == null ? data.aws_caller_identity.current.account_id : var.aws_account_id
-  stage_name     = var.api.stage_name
+  stage_name     = var.stage_name
   region         = var.region
 
   domain          = var.domain
@@ -86,10 +88,14 @@ module "api" {
 
   gui_integration = {
     s3_bucket_id = module.gui.bucket.id
-    entrypoint   = var.gui.entrypoint
+    entrypoint   = var.frontend.entrypoint
   }
 
-  business_logic     = var.api.business_logic
+  business_logic = {
+    function_arn  = module.backend.lambda_function.arn
+    function_name = module.backend.lambda_function.function_name
+  }
+
   binary_media_types = var.binary_media_types
 
   auth_config = {
@@ -113,8 +119,33 @@ module "api" {
   tags = var.tags
 
   depends_on = [
-    module.auth_lambda
+    module.auth_lambda,
+    module.backend
   ]
+}
+
+module "backend" {
+  source = "../terraform-aws-lambda"
+  # version = "0.1.3"
+
+  stage = var.stage_name
+  tags  = var.tags
+
+  # Example lambda function configuration
+  function = {
+    name        = var.backend.name
+    description = "Sample API"
+
+    zip     = var.backend.source
+    handler = var.backend.entrypoint
+    runtime = var.backend.runtime
+    memsize = var.backend.memory_mb
+  }
+
+  layer = {
+    zip                 = var.backend.modules[0].source
+    compatible_runtimes = [var.backend.modules[0].runtime]
+  }
 }
 
 #### COGNITO USER POOL CLIENT
@@ -199,7 +230,7 @@ data "aws_iam_policy_document" "gui_bucket" {
 #### BUSINESS LOGIC CALLING PERMISSIONS
 resource "aws_lambda_permission" "business_logic_root" {
   action        = "lambda:InvokeFunction"
-  function_name = var.api.business_logic.function_name
+  function_name = module.backend.lambda_function.function_name
   principal     = "apigateway.amazonaws.com"
 
   source_arn = "${module.api.execution_arn}/*/*/${local.api_path}"
@@ -208,7 +239,7 @@ resource "aws_lambda_permission" "business_logic_root" {
 resource "aws_lambda_permission" "business_logic_any_path" {
   count         = local.api_path == "*" ? 0 : 1
   action        = "lambda:InvokeFunction"
-  function_name = var.api.business_logic.function_name
+  function_name = module.backend.lambda_function.function_name
   principal     = "apigateway.amazonaws.com"
 
   source_arn = "${module.api.execution_arn}/*/*/${local.api_path}/*"
@@ -271,7 +302,7 @@ module "auth_lambda" {
       LOG_LEVEL            = "INFO"
       REDIRECT_URI         = "/${local.auth_endpoint_path}"
       REGION               = "us-east-1"
-      RETURN_URI           = "/${var.gui.entrypoint}"
+      RETURN_URI           = "/${var.frontend.entrypoint}"
     }
   }
 
