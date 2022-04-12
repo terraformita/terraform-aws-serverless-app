@@ -19,6 +19,9 @@ locals {
   login_path  = local.auth_enabled ? "login?response_type=code&client_id=${local.cognito_client_id}&redirect_uri=https://${var.domain}/${local.auth_endpoint_path}" : ""
 }
 
+data "aws_caller_identity" "current" {}
+data "aws_partition" "current" {}
+
 module "auth_defaults" {
   source  = "terraformita/defaults/local"
   version = "0.0.6"
@@ -68,8 +71,8 @@ module "api" {
   name = var.name
   path = local.api_path
 
-  aws_partition  = var.aws_partition
-  aws_account_id = var.aws_account_id
+  aws_partition  = var.aws_partition == null ? data.aws_partition.current.partition : var.aws_partition
+  aws_account_id = var.aws_account_id == null ? data.aws_caller_identity.current.account_id : var.aws_account_id
   stage_name     = var.api.stage_name
   region         = var.region
 

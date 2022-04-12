@@ -32,7 +32,7 @@ variable "gui" {
 
 variable "api" {
   type = object({
-    path = string
+    path       = string
     stage_name = optional(string)
     business_logic = object({
       function_arn  = string
@@ -66,6 +66,7 @@ variable "aws_account_id" {
 variable "region" {
   type        = string
   default     = "us-east-1"
+  nullable    = false
   description = "AWS Region"
 }
 

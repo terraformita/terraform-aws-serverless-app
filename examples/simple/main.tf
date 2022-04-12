@@ -9,7 +9,6 @@ data "aws_caller_identity" "current" {}
 data "aws_partition" "current" {}
 
 locals {
-  region    = "us-east-1"
   api_stage = "dev"
 
   tags = {
@@ -19,16 +18,12 @@ locals {
 
 module "app" {
   source = "../../"
-
-  name = random_pet.stage_name.id
-
-  region         = local.region
-  aws_partition  = data.aws_partition.current.partition
-  aws_account_id = data.aws_caller_identity.current.account_id
+  name   = random_pet.stage_name.id
 
   api = {
     path       = "/api"
     stage_name = local.api_stage
+
     business_logic = {
       function_arn  = module.backend.lambda_function.arn
       function_name = module.backend.lambda_function.function_name
@@ -55,7 +50,7 @@ data "archive_file" "backend" {
   type = "zip"
 
   source_dir  = "${path.module}/backend/nodejs"
-  excludes    = fileset("${path.module}/backend/nodejs", "node_modules/**")
+  excludes    = setunion(fileset("${path.module}/backend/nodejs", "node_modules/**"))
   output_path = "${path.module}/backend/backend.zip"
 }
 
@@ -79,14 +74,14 @@ module "backend" {
     name        = random_pet.function_name.id
     description = "Sample API"
 
-    zip     = "${path.module}/backend/backend1.zip"
+    zip     = "${path.module}/backend/backend.zip"
     handler = "index.handler"
     runtime = "nodejs12.x"
     memsize = 128
   }
 
   layer = {
-    zip                 = "${path.module}/backend/layer1.zip"
+    zip                 = "${path.module}/backend/layer.zip"
     compatible_runtimes = ["nodejs12.x"]
   }
 
