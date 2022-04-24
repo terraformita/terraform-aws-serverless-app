@@ -21,23 +21,33 @@ variable "certificate" {
   description = "ARN of the certificate for the domain"
 }
 
+variable "stage_name" {
+  type        = string
+  default     = "prod"
+  nullable    = false
+  description = "Name of the app stage (e.g. dev, staging, prod, etc)"
+}
+
 variable "gui" {
   type = object({
     path          = string
     entrypoint    = string
     path_to_files = optional(string)
   })
+  default     = null
   description = "GUI layer configuration - API path, default document (entrypoint), path to directory with source files."
 }
 
 variable "api" {
   type = object({
-    path = string
+    path       = string
+    stage_name = optional(string)
     business_logic = object({
       function_arn  = string
       function_name = string
     })
   })
+  default     = null
   description = "API layer configuration - API path, ARN and name of the lambda function used as a business logic for the app."
 }
 
@@ -54,16 +64,20 @@ variable "tags" {
 
 variable "aws_partition" {
   type        = string
+  default     = null
   description = "Name of current AWS partition"
 }
 
 variable "aws_account_id" {
   type        = string
+  default     = null
   description = "ID of current AWS Account"
 }
 
 variable "region" {
   type        = string
+  default     = "us-east-1"
+  nullable    = false
   description = "AWS Region"
 }
 
@@ -135,4 +149,36 @@ variable "binary_media_types" {
     "*/*"
   ]
   description = "List of MIME types to be treated as binary for downloading"
+}
+
+variable "backend" {
+  type = object({
+    path = string
+
+    name        = string
+    description = optional(string)
+
+    source     = string
+    entrypoint = string
+    runtime    = string
+    memory_mb  = number
+
+    modules = list(object({
+      source  = string
+      runtime = string
+    }))
+  })
+  default     = null
+  description = "Backend configuration - API path, stage name, source files, entrypoint, runtime, memory limit (megabytes), list of modules (libraries)."
+}
+
+variable "frontend" {
+  type = object({
+    path        = string
+    description = string
+    entrypoint  = string
+    source      = optional(string)
+  })
+  default     = null
+  description = "Frontend configuration - web path, default document (entrypoint), path to directory with source files."
 }

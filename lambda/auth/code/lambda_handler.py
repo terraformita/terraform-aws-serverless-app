@@ -120,23 +120,28 @@ def handle_login_request(code):
     }
     headers = {"Content-Type": "application/x-www-form-urlencoded",
                 "Authorization": f"Basic {secret_hash}"}
-               
+
     resp = requests.post(token_url, params=payload, headers=headers)
     log_debug(f"Response from cognito: {resp.status_code}: {resp.text}")
-    
+
     if resp.status_code == 200:
         tokens = json.loads(resp.text)
         log_debug(f"Retrieved access token: {tokens['access_token']}")
         result['statusCode'] = 302
         result['headers'] = {
-            'Set-Cookie': f"Authorization={tokens['access_token']}",
             'Location': return_uri
+        }
+        result['multiValueHeaders'] = {
+            'Set-Cookie': [
+                f"Authorization={tokens['access_token']}", 
+                f"ID_Token={tokens['id_token']}",
+            ]
         }
         return result
 
     result['statusCode'] = resp.status_code
     result['body'] = resp.text
-    
+
     return result
 
 def decode_token(token):

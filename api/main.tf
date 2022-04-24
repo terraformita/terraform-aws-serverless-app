@@ -69,6 +69,8 @@ resource "aws_api_gateway_rest_api" "api" {
 
 #### API DOMAIN
 resource "aws_api_gateway_domain_name" "api" {
+  count = var.domain == null ? 0 : 1
+
   domain_name              = var.domain
   regional_certificate_arn = var.certificate
 
@@ -84,14 +86,14 @@ resource "aws_api_gateway_domain_name" "api" {
 resource "aws_route53_record" "api" {
   count   = var.domain_zone_id != null ? 1 : 0
   zone_id = var.domain_zone_id
-  name    = aws_api_gateway_domain_name.api.domain_name
+  name    = aws_api_gateway_domain_name.api[0].domain_name
   type    = "A"
 
 
   alias {
     evaluate_target_health = true
-    name                   = aws_api_gateway_domain_name.api.regional_domain_name
-    zone_id                = aws_api_gateway_domain_name.api.regional_zone_id
+    name                   = aws_api_gateway_domain_name.api[0].regional_domain_name
+    zone_id                = aws_api_gateway_domain_name.api[0].regional_zone_id
   }
 }
 
@@ -114,6 +116,29 @@ resource "aws_api_gateway_deployment" "deployment" {
   lifecycle {
     create_before_destroy = true
   }
+
+  depends_on = [
+    aws_api_gateway_method.root_get,
+    aws_api_gateway_method.s3_proxy_get,
+    # aws_api_gateway_method.gui_item_options,
+    aws_api_gateway_method.api_item,
+    aws_api_gateway_method.proxy,
+    aws_api_gateway_resource.s3_proxy,
+    aws_api_gateway_resource.api_item,
+    aws_api_gateway_resource.proxy,
+    aws_api_gateway_method_response.root_get,
+    aws_api_gateway_method_response.s3_proxy_get,
+    # aws_api_gateway_method_response.gui_item_options,
+    aws_api_gateway_method_response.api_item,
+    aws_api_gateway_integration.root_get,
+    aws_api_gateway_integration.s3_proxy_get,
+    aws_api_gateway_integration.api_item,
+    aws_api_gateway_integration.proxy,
+    aws_api_gateway_integration_response.root_get,
+    aws_api_gateway_integration_response.s3_proxy_get,
+    aws_api_gateway_integration_response.api_item,
+    aws_api_gateway_integration_response.proxy
+  ]
 }
 
 resource "aws_api_gateway_account" "this" {
@@ -130,7 +155,7 @@ resource "aws_api_gateway_stage" "stage" {
   cache_cluster_enabled = false
   deployment_id         = aws_api_gateway_deployment.deployment.id
   rest_api_id           = aws_api_gateway_rest_api.api.id
-  stage_name            = var.name
+  stage_name            = var.stage_name
   xray_tracing_enabled  = false
 
   dynamic "access_log_settings" {
@@ -149,9 +174,11 @@ resource "aws_api_gateway_stage" "stage" {
 }
 
 resource "aws_api_gateway_base_path_mapping" "api_mapping" {
+  count = var.domain == null ? 0 : 1
+
   api_id      = aws_api_gateway_rest_api.api.id
   stage_name  = aws_api_gateway_stage.stage.stage_name
-  domain_name = aws_api_gateway_domain_name.api.domain_name
+  domain_name = aws_api_gateway_domain_name.api[0].domain_name
 }
 
 resource "aws_api_gateway_method_settings" "api_settings" {
@@ -283,15 +310,25 @@ resource "aws_iam_role_policy" "authorizer" {
 
 
 #### API RESOURCES
-resource "aws_api_gateway_resource" "gui_item" {
-  parent_id   = aws_api_gateway_rest_api.api.root_resource_id
-  path_part   = "{item}"
+resource "aws_api_gateway_resource" "s3_proxy" {
   rest_api_id = aws_api_gateway_rest_api.api.id
+  parent_id   = aws_api_gateway_rest_api.api.root_resource_id
+  path_part   = "{proxy+}"
 
   depends_on = [
     aws_api_gateway_rest_api.api
   ]
 }
+
+# resource "aws_api_gateway_resource" "gui_item" {
+#   parent_id   = aws_api_gateway_rest_api.api.root_resource_id
+#   path_part   = "{item}"
+#   rest_api_id = aws_api_gateway_rest_api.api.id
+
+#   depends_on = [
+#     aws_api_gateway_rest_api.api
+#   ]
+# }
 
 resource "aws_api_gateway_resource" "api_item" {
   parent_id   = aws_api_gateway_rest_api.api.root_resource_id
@@ -343,50 +380,56 @@ resource "aws_api_gateway_method" "root_get" {
 
   depends_on = [
     aws_api_gateway_rest_api.api,
-    aws_api_gateway_resource.gui_item,
+    aws_api_gateway_resource.s3_proxy,
     aws_api_gateway_resource.api_item
   ]
 }
 
-resource "aws_api_gateway_method" "gui_item_get" {
+resource "aws_api_gateway_method" "s3_proxy_get" {
   api_key_required = "false"
   authorization    = local.auth_config.enabled ? "CUSTOM" : "NONE"
   authorizer_id    = local.auth_config.enabled ? aws_api_gateway_authorizer.authorizer[0].id : null
 
   http_method = "GET"
 
+  # request_parameters = {
+  #   "method.request.header.Content-Disposition" = "false"
+  #   "method.request.header.Content-Type"        = "false"
+  #   "method.request.path.item"                  = "true"
+  # }
+
   request_parameters = {
     "method.request.header.Content-Disposition" = "false"
     "method.request.header.Content-Type"        = "false"
-    "method.request.path.item"                  = "true"
+    "method.request.path.proxy"                 = true
   }
 
-  resource_id = aws_api_gateway_resource.gui_item.id
+  resource_id = aws_api_gateway_resource.s3_proxy.id
   rest_api_id = aws_api_gateway_rest_api.api.id
 
   depends_on = [
     aws_api_gateway_rest_api.api,
-    aws_api_gateway_resource.gui_item,
+    aws_api_gateway_resource.s3_proxy,
     aws_api_gateway_resource.api_item
   ]
 }
 
-resource "aws_api_gateway_method" "gui_item_options" {
-  api_key_required = "false"
-  authorization    = local.auth_config.enabled ? "CUSTOM" : "NONE"
-  authorizer_id    = local.auth_config.enabled ? aws_api_gateway_authorizer.authorizer[0].id : null
+# resource "aws_api_gateway_method" "gui_item_options" {
+#   api_key_required = "false"
+#   authorization    = local.auth_config.enabled ? "CUSTOM" : "NONE"
+#   authorizer_id    = local.auth_config.enabled ? aws_api_gateway_authorizer.authorizer[0].id : null
 
-  http_method = "OPTIONS"
+#   http_method = "OPTIONS"
 
-  resource_id = aws_api_gateway_resource.gui_item.id
-  rest_api_id = aws_api_gateway_rest_api.api.id
+#   resource_id = aws_api_gateway_resource.gui_item.id
+#   rest_api_id = aws_api_gateway_rest_api.api.id
 
-  depends_on = [
-    aws_api_gateway_rest_api.api,
-    aws_api_gateway_resource.gui_item,
-    aws_api_gateway_resource.api_item
-  ]
-}
+#   depends_on = [
+#     aws_api_gateway_rest_api.api,
+#     aws_api_gateway_resource.gui_item,
+#     aws_api_gateway_resource.api_item
+#   ]
+# }
 
 resource "aws_api_gateway_method" "api_item" {
   api_key_required = "false"
@@ -400,7 +443,7 @@ resource "aws_api_gateway_method" "api_item" {
 
   depends_on = [
     aws_api_gateway_rest_api.api,
-    aws_api_gateway_resource.gui_item,
+    aws_api_gateway_resource.s3_proxy,
     aws_api_gateway_resource.api_item
   ]
 }
@@ -464,9 +507,9 @@ resource "aws_api_gateway_method_response" "root_get" {
   ]
 }
 
-resource "aws_api_gateway_method_response" "gui_item_get" {
+resource "aws_api_gateway_method_response" "s3_proxy_get" {
   http_method = "GET"
-  resource_id = aws_api_gateway_resource.gui_item.id
+  resource_id = aws_api_gateway_resource.s3_proxy.id
 
   response_models = {
     "application/json" = "Empty"
@@ -481,31 +524,32 @@ resource "aws_api_gateway_method_response" "gui_item_get" {
   status_code = "200"
 
   depends_on = [
-    aws_api_gateway_method.gui_item_get
+    aws_api_gateway_method.s3_proxy_get
   ]
 }
 
-resource "aws_api_gateway_method_response" "gui_item_options" {
-  http_method = "OPTIONS"
-  resource_id = aws_api_gateway_resource.gui_item.id
+# TODO: Restore when OPTIONS method is needed
+# resource "aws_api_gateway_method_response" "gui_item_options" {
+#   http_method = "OPTIONS"
+#   resource_id = aws_api_gateway_resource.gui_item.id
 
-  response_models = {
-    "application/json" = "Empty"
-  }
+#   response_models = {
+#     "application/json" = "Empty"
+#   }
 
-  response_parameters = {
-    "method.response.header.Access-Control-Allow-Headers" = "false"
-    "method.response.header.Access-Control-Allow-Methods" = "false"
-    "method.response.header.Access-Control-Allow-Origin"  = "false"
-  }
+#   response_parameters = {
+#     "method.response.header.Access-Control-Allow-Headers" = "false"
+#     "method.response.header.Access-Control-Allow-Methods" = "false"
+#     "method.response.header.Access-Control-Allow-Origin"  = "false"
+#   }
 
-  rest_api_id = aws_api_gateway_rest_api.api.id
-  status_code = "200"
+#   rest_api_id = aws_api_gateway_rest_api.api.id
+#   status_code = "200"
 
-  depends_on = [
-    aws_api_gateway_method.gui_item_options
-  ]
-}
+#   depends_on = [
+#     aws_api_gateway_method.gui_item_options
+#   ]
+# }
 
 resource "aws_api_gateway_method_response" "api_item" {
   http_method = aws_api_gateway_method.api_item.http_method
@@ -546,11 +590,10 @@ resource "aws_api_gateway_integration" "root_get" {
   depends_on = [
     aws_api_gateway_method_response.root_get
   ]
-
 }
 
-resource "aws_api_gateway_integration" "gui_item_get" {
-  cache_namespace         = aws_api_gateway_resource.gui_item.id
+resource "aws_api_gateway_integration" "s3_proxy_get" {
+  cache_namespace         = aws_api_gateway_resource.s3_proxy.id
   connection_type         = "INTERNET"
   credentials             = aws_iam_role.api_gateway.arn
   http_method             = "GET"
@@ -560,43 +603,41 @@ resource "aws_api_gateway_integration" "gui_item_get" {
   request_parameters = {
     "integration.request.header.Content-Disposition" = "method.request.header.Content-Disposition"
     "integration.request.header.Content-Type"        = "method.request.header.Content-Type"
-    "integration.request.path.item"                  = "method.request.path.item"
+    "integration.request.path.proxy"                 = "method.request.path.proxy"
   }
 
-  resource_id          = aws_api_gateway_resource.gui_item.id
+  resource_id          = aws_api_gateway_resource.s3_proxy.id
   rest_api_id          = aws_api_gateway_rest_api.api.id
   timeout_milliseconds = "29000"
   type                 = "AWS"
-  uri                  = "arn:${var.aws_partition}:apigateway:${var.region}:s3:path/${var.gui_integration.s3_bucket_id}/{item}"
-
+  uri                  = "arn:${var.aws_partition}:apigateway:${var.region}:s3:path/${var.gui_integration.s3_bucket_id}/{proxy}"
 
   depends_on = [
-    aws_api_gateway_method_response.gui_item_get
+    aws_api_gateway_method_response.s3_proxy_get
   ]
 }
 
-resource "aws_api_gateway_integration" "gui_item_options" {
-  cache_namespace      = aws_api_gateway_resource.gui_item.id
-  connection_type      = "INTERNET"
-  http_method          = "OPTIONS"
-  passthrough_behavior = "WHEN_NO_MATCH"
+# resource "aws_api_gateway_integration" "gui_item_options" {
+#   cache_namespace      = aws_api_gateway_resource.gui_item.id
+#   connection_type      = "INTERNET"
+#   http_method          = "OPTIONS"
+#   passthrough_behavior = "WHEN_NO_MATCH"
 
-  request_templates = {
-    "application/json" = jsonencode({
-      "statusCode" = 200
-    })
-  }
+#   request_templates = {
+#     "application/json" = jsonencode({
+#       "statusCode" = 200
+#     })
+#   }
 
-  resource_id          = aws_api_gateway_resource.gui_item.id
-  rest_api_id          = aws_api_gateway_rest_api.api.id
-  timeout_milliseconds = "29000"
-  type                 = "MOCK"
+#   resource_id          = aws_api_gateway_resource.gui_item.id
+#   rest_api_id          = aws_api_gateway_rest_api.api.id
+#   timeout_milliseconds = "29000"
+#   type                 = "MOCK"
 
-  depends_on = [
-    aws_api_gateway_method_response.gui_item_options
-  ]
-
-}
+#   depends_on = [
+#     aws_api_gateway_method_response.gui_item_options
+#   ]
+# }
 
 resource "aws_api_gateway_integration" "api_item" {
   cache_namespace = aws_api_gateway_resource.api_item.id
@@ -670,9 +711,9 @@ resource "aws_api_gateway_integration_response" "root_get" {
   ]
 }
 
-resource "aws_api_gateway_integration_response" "gui_item_get" {
+resource "aws_api_gateway_integration_response" "s3_proxy_get" {
   http_method = "GET"
-  resource_id = aws_api_gateway_resource.gui_item.id
+  resource_id = aws_api_gateway_resource.s3_proxy.id
 
   response_parameters = {
     "method.response.header.Content-Disposition" = "integration.response.header.Content-Disposition"
@@ -683,27 +724,27 @@ resource "aws_api_gateway_integration_response" "gui_item_get" {
   status_code = "200"
 
   depends_on = [
-    aws_api_gateway_integration.gui_item_get
+    aws_api_gateway_integration.s3_proxy_get
   ]
 }
 
-resource "aws_api_gateway_integration_response" "gui_item_options" {
-  http_method = "OPTIONS"
-  resource_id = aws_api_gateway_resource.gui_item.id
+# resource "aws_api_gateway_integration_response" "gui_item_options" {
+#   http_method = "OPTIONS"
+#   resource_id = aws_api_gateway_resource.gui_item.id
 
-  response_parameters = {
-    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token'"
-    "method.response.header.Access-Control-Allow-Methods" = "'DELETE,GET,HEAD,OPTIONS,PATCH,POST,PUT'"
-    "method.response.header.Access-Control-Allow-Origin"  = "'*'"
-  }
+#   response_parameters = {
+#     "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token'"
+#     "method.response.header.Access-Control-Allow-Methods" = "'DELETE,GET,HEAD,OPTIONS,PATCH,POST,PUT'"
+#     "method.response.header.Access-Control-Allow-Origin"  = "'*'"
+#   }
 
-  rest_api_id = aws_api_gateway_rest_api.api.id
-  status_code = "200"
+#   rest_api_id = aws_api_gateway_rest_api.api.id
+#   status_code = "200"
 
-  depends_on = [
-    aws_api_gateway_integration.gui_item_options
-  ]
-}
+#   depends_on = [
+#     aws_api_gateway_integration.gui_item_options
+#   ]
+# }
 
 resource "aws_api_gateway_integration_response" "api_item" {
   http_method = "ANY"

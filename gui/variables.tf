@@ -21,3 +21,10 @@ variable "tags" {
   type        = map(any)
   description = "Tags to set on resources created by the app"
 }
+
+variable "stage_name" {
+  type        = string
+  default     = "prod"
+  nullable    = false
+  description = "Name of the app stage (e.g. dev, staging, prod, etc)"
+}
