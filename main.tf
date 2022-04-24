@@ -125,8 +125,8 @@ module "api" {
 }
 
 module "backend" {
-  source = "../terraform-aws-lambda"
-  # version = "0.1.3"
+  source  = "terraformita/lambda/aws"
+  version = "0.1.4"
 
   stage = var.stage_name
   tags  = var.tags
@@ -279,7 +279,7 @@ module "auth_lambda" {
   count = local.auth_enabled ? 1 : 0
 
   source  = "terraformita/lambda/aws"
-  version = "0.1.3"
+  version = "0.1.4"
 
   stage = var.name
   tags  = var.tags
