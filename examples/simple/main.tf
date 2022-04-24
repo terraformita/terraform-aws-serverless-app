@@ -35,14 +35,14 @@ module "app" {
     name        = local.api_name
     description = "Sample API"
 
-    source     = data.archive_file.backend.output_path
+    source     = "${data.archive_file.backend.output_path}"
     entrypoint = "index.handler"
-    runtime    = "nodejs12.x"
+    runtime    = "nodejs14.x"
     memory_mb  = 128
 
     modules = [{
-      source  = data.archive_file.modules.output_path
-      runtime = "nodejs12.x"
+      source  = "${data.archive_file.modules.output_path}"
+      runtime = "nodejs14.x"
     }]
   }
 
@@ -62,15 +62,15 @@ data "archive_file" "backend" {
 
   source_dir  = "${path.module}/backend/nodejs"
   excludes    = setunion(fileset("${path.module}/backend/nodejs", "node_modules/**"))
-  output_path = "${path.module}/backend/backend.zip"
+  output_path = "${path.module}/backend.zip"
 }
 
 data "archive_file" "modules" {
   type = "zip"
 
-  source_dir  = "${path.module}/backend/nodejs"
-  excludes    = ["index.js", "package-lock.json", "package.json"]
-  output_path = "${path.module}/backend/layer.zip"
+  source_dir  = "${path.module}/backend"
+  excludes    = ["nodejs/index.js", "nodejs/package-lock.json", "nodejs/package.json"]
+  output_path = "${path.module}/layer.zip"
 }
 
 output "frontend_storage" {

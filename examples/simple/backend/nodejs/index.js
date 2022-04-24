@@ -22,5 +22,5 @@ app.post('/api/friend/friendModel/_id*', (req, res) => {
     res.send({ ...req.body });
 });
 
-//app.listen(3000, () => console.log(`Listening on: 3000`));
+// app.listen(3000, () => console.log(`Listening on: 3000`));
 module.exports.handler = serverless(app);

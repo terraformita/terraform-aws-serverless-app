@@ -134,7 +134,7 @@ module "backend" {
   # Example lambda function configuration
   function = {
     name        = var.backend.name
-    description = "Sample API"
+    description = try(var.backend.description, "Sample API")
 
     zip     = var.backend.source
     handler = var.backend.entrypoint
