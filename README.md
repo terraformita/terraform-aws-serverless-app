@@ -24,7 +24,7 @@ Module Supports:
 ## Infrastructure
 ![Serverless App Module Infrastructure](https://user-images.githubusercontent.com/1422584/156475917-9bc87d9d-d656-480a-959e-9da2836568e3.png)
 
-## Pre-Requisites
+## OPTIONAL Pre-Requisites
 Before using the module:
 - Should create ACM Certificate
 - (if user auth required) Should create AWS Cognito User Pool and Userpool Client
@@ -39,10 +39,11 @@ module "serverless_app" {
   source  = "terraformita/serverless-app/aws"
   version = "Module Version"  # <--- make sure to specify correct version
 
-  name = "Name of Target AWS Environment"
+  name        = "Name of the App (example: React App)"
+  stage_name  = "(Optional) Name of the deployment stage (default: 'dev')"
 
-  domain      = "website.example.com"
-  certificate = "ARN of AWS ACM Certificate"
+  domain      = "(Optional) Custom domain, such as: website.example.com"
+  certificate = "(Optional) ARN of AWS ACM (SSL) Certificate"
 
   domain_zone_id        = "(Optional) ID of AWS Route 53 hosted domain zone"
   s3_access_logs_bucket = "(Optional, Advanced Feature) ARN of S3 bucket used for S3 Access Logging"
@@ -50,24 +51,38 @@ module "serverless_app" {
   kms_key_arn        = "(Optional, Advanced Feature) ARN of KMS Key to encrypt CloudWatch logs"
   log_retention_days = "(Optional, Advanced Feature) Period, in days, to store App access logs in CloudWatch. Defaults to 7"
 
-  region         = "Target AWS Region (example: us-east-1)"
-  aws_partition  = "AWS Partition (example: aws)"
-  aws_account_id = "ID of target AWS Account"
+  region         = "(Optional) Target AWS Region (default: us-east-1)"
+  aws_partition  = "(Optional) AWS Partition (default: current partition)"
+  aws_account_id = "(Optional) ID of target AWS Account (default: current Account ID)"
 
-  gui = {
-    # Required. Client App Configuration
-    path          = "Web Access Path. Example: /"
-    entrypoint    = "Index Document for Client App. Example: index.html"
-    path_to_files = "Optional. Path to files with client app. Example: ${path.module}/files"
+  frontend = {
+    Required. Frontend configuration.
+    path = "Web Access Path. Example: /"
+
+    description = "(Optional) App description, for example: 'React App Frontend'"
+    entrypoint  = "Index Document for Client App. Example: index.html"
+    source      = "(Optional) Path to directory with frontend files. Example: ${path.module}/frontend"
   }
 
-  api = {
-    # Required. Server App (API, Business Logic) Configuration
+  backend = {
+    # Required. App backend configuration. Will be turned into AWS Lambda function.    
     path = "Web Access Path. Example: /api"
-    business_logic = {
-      function_arn  = "ARN of Lambda Function used as API/Business Logic"
-      function_name = "Function Name of Lambda Function used as API/Business Logic"
-    }
+
+    name        = "Machine-readable name of the backend (example: react-app-backend)"
+    description = "(Optional) Description of the backend (example: React App Backend)"
+
+    source     = "Path to directory with backend files. Example: ${path.module}/backend"
+    entrypoint = "Combination of main file name of the backend and its entry function (example: index.handler, where 'index' refers to 'index.js' and 'handler' is a function declared within 'index.js')."
+    runtime    = "AWS-supported Lambda function runtime used to run backend"
+    memory_mb  = "AWS-supported number of megabytes of memory allocated for the backend Lambda function"
+
+    modules = [
+      # Optional. Required if backend uses external modules (i.e. "node_modules" in case of nodejs)
+      {
+        source  = "Path to directory with modules (libraries) of the backend. Example: ${path.module}/backend"
+        runtime = "AWS-supported Lambda function runtime used to run backend"
+      }
+    ]
   }
 
   auth_config = {
@@ -126,4 +141,3 @@ Usually no post-deployment steps are required. However, if you chose to use exis
 - Open AWS Cognito Console
 - Locate your App Client used for User Authentication
 - Change "Redirect URL" to copied API Endpoint
-
