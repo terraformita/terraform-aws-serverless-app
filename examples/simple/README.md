@@ -24,7 +24,8 @@ npm init -y
 
 - Install required packages
 ```
-npm install babel-cli@6 babel-preset-react-app@3
+npm install --save-dev babel-cli
+npm install babel-preset-react-app@3
 ```
 
 - Compile React App
