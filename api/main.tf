@@ -1,7 +1,3 @@
-terraform {
-  experiments = [module_variable_optional_attrs]
-}
-
 locals {
   access-log-settings = !local.logging_config.enable_access_logging ? [] : [{
     log_group_arn = aws_cloudwatch_log_group.access.arn

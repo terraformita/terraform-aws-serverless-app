@@ -1,7 +1,3 @@
-terraform {
-  experiments = [module_variable_optional_attrs]
-}
-
 locals {
   api_path = substr(var.backend.path, 1, length(var.backend.path) - 1)
 
@@ -126,7 +122,7 @@ module "api" {
 
 module "backend" {
   source  = "terraformita/lambda/aws"
-  version = "0.1.4"
+  version = "0.1.5"
 
   stage = var.stage_name
   tags  = var.tags
@@ -279,7 +275,7 @@ module "auth_lambda" {
   count = local.auth_enabled ? 1 : 0
 
   source  = "terraformita/lambda/aws"
-  version = "0.1.4"
+  version = "0.1.5"
 
   stage = var.name
   tags  = var.tags

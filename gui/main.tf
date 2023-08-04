@@ -11,9 +11,26 @@ resource "aws_s3_bucket" "gui" {
   tags = var.tags
 }
 
+resource "aws_s3_bucket_ownership_controls" "gui" {
+  bucket = aws_s3_bucket.gui.id
+  rule {
+    object_ownership = "BucketOwnerPreferred"
+  }
+
+  depends_on = [
+    aws_s3_bucket_policy.gui,
+    aws_s3_bucket_public_access_block.gui,
+    aws_s3_bucket.gui
+  ]
+}
+
 resource "aws_s3_bucket_acl" "gui" {
   bucket = aws_s3_bucket.gui.id
   acl    = "private"
+
+  depends_on = [
+    aws_s3_bucket_ownership_controls.gui
+  ]
 }
 
 resource "aws_s3_bucket_logging" "gui" {
@@ -45,18 +62,18 @@ resource "aws_s3_bucket_public_access_block" "gui" {
   bucket = aws_s3_bucket.gui.id
 
   block_public_acls       = true
-  block_public_policy     = true
+  block_public_policy     = false
   ignore_public_acls      = true
   restrict_public_buckets = true
-
-  depends_on = [
-    aws_s3_bucket_policy.gui
-  ]
 }
 
 resource "aws_s3_bucket_policy" "gui" {
   bucket = aws_s3_bucket.gui.id
   policy = data.aws_iam_policy_document.gui_bucket.json
+
+  depends_on = [
+    aws_s3_bucket_public_access_block.gui
+  ]
 }
 
 data "aws_iam_policy_document" "gui_bucket" {
@@ -97,7 +114,7 @@ data "aws_iam_policy_document" "gui_bucket" {
   statement {
     sid = "DenyOutdatedTLS"
     principals {
-      type        = "AWS"
+      type        = "*"
       identifiers = ["*"]
     }
 
@@ -125,7 +142,7 @@ data "aws_iam_policy_document" "gui_bucket" {
   statement {
     sid = "DenyInsecureConnections"
     principals {
-      type        = "AWS"
+      type        = "*"
       identifiers = ["*"]
     }
 
