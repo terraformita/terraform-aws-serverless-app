@@ -76,6 +76,18 @@ module "serverless_app" {
     runtime    = "AWS-supported Lambda function runtime used to run backend"
     memory_mb  = "AWS-supported number of megabytes of memory allocated for the backend Lambda function"
 
+    env_vars = {
+      # Optional. Map of the environment variables for the backend lambda function
+      # Example:
+      # LOG_LEVEL = "DEBUG"
+    }
+
+    iam_policies = {
+      # Optional. Map of the IAM policies (JSON documents) for the backend lambda function
+      # Example:
+      # s3_bucket_access = data.iam_policy_document.s3_bucket_access.json
+    }
+
     modules = [
       # Optional. Required if backend uses external modules (i.e. "node_modules" in case of nodejs)
       {
