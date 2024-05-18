@@ -281,7 +281,7 @@ module "auth_lambda" {
   source  = "terraformita/lambda/aws"
   version = "0.1.5"
 
-  stage = var.name
+  stage = "${var.name}-${var.stage_name}"
   tags  = var.tags
 
   function = {
