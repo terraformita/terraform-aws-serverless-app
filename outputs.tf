@@ -14,3 +14,7 @@ output "deployment" {
   }
   description = "App URL (aws and custom), ARN of api gateway's iam role, api gateway execution ARN, and url of the auth endpoint (if auth is enabled)."
 }
+
+output "auth_enabled" {
+  value = local.auth_enabled
+}
