@@ -290,7 +290,7 @@ module "auth_lambda" {
 
     zip     = "${path.module}/lambda/auth/lambda_handler.py.zip"
     handler = "lambda_handler.lambda_handler"
-    runtime = "python3.7"
+    runtime = "python3.8"
     memsize = "256"
 
     env = {
@@ -308,7 +308,7 @@ module "auth_lambda" {
 
   layer = {
     zip                 = "${path.module}/lambda/auth/sdk-layer.zip"
-    compatible_runtimes = ["python3.7"]
+    compatible_runtimes = ["python3.8"]
   }
 
   depends_on = [
