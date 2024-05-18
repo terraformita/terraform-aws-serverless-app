@@ -151,7 +151,7 @@ module "backend" {
 #### COGNITO USER POOL CLIENT
 resource "aws_cognito_user_pool_client" "idp_client" {
   count = local.need_cognito_client ? 1 : 0
-  name  = "${var.name}-cognito-idp-client"
+  name  = "${var.name}-${var.stage_name}-cognito-idp-client"
 
   user_pool_id    = local.cognito_config.userpool_id
   generate_secret = true
@@ -195,7 +195,7 @@ resource "aws_cognito_user_pool_client" "idp_client" {
 
 #### API ACCESS TO GUI BUCKET
 resource "aws_iam_policy" "gui_bucket" {
-  name   = "${var.name}-gui-bucket-access"
+  name   = "${var.name}-${var.stage_name}-gui-bucket-access"
   policy = data.aws_iam_policy_document.gui_bucket.json
   tags   = var.tags
 }
