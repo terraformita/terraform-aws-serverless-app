@@ -28,29 +28,6 @@ variable "stage_name" {
   description = "Name of the app stage (e.g. dev, staging, prod, etc)"
 }
 
-variable "gui" {
-  type = object({
-    path          = string
-    entrypoint    = string
-    path_to_files = optional(string)
-  })
-  default     = null
-  description = "GUI layer configuration - API path, default document (entrypoint), path to directory with source files."
-}
-
-variable "api" {
-  type = object({
-    path       = string
-    stage_name = optional(string)
-    business_logic = object({
-      function_arn  = string
-      function_name = string
-    })
-  })
-  default     = null
-  description = "API layer configuration - API path, ARN and name of the lambda function used as a business logic for the app."
-}
-
 variable "s3_access_logs_bucket" {
   type        = string
   default     = null
@@ -167,9 +144,12 @@ variable "backend" {
       source  = string
       runtime = string
     }))
+
+    env_vars     = optional(map(string))
+    iam_policies = optional(map(string))
   })
   default     = null
-  description = "Backend configuration - API path, stage name, source files, entrypoint, runtime, memory limit (megabytes), list of modules (libraries)."
+  description = "Backend configuration - API path, stage name, source files, entrypoint, runtime, memory limit (megabytes), environment variables, IAM policies, list of modules (libraries)."
 }
 
 variable "frontend" {

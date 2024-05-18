@@ -136,6 +136,10 @@ module "backend" {
     handler = var.backend.entrypoint
     runtime = var.backend.runtime
     memsize = var.backend.memory_mb
+
+    env      = var.backend.env_vars
+    policies = var.backend.iam_policies
+
   }
 
   layer = {

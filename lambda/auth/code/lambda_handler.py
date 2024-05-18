@@ -48,7 +48,7 @@ def lambda_handler(event, context):
 def handle_authenticated_request(event):
     log_debug('Handling authenticated request')
     username = "sub"
-    
+
     if not 'methodArn' in event:
         log_debug('Method ARN is not present in the request')
         log_debug('Request will be denied')
