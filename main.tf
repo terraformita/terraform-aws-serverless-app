@@ -151,7 +151,7 @@ module "backend" {
 #### COGNITO USER POOL CLIENT
 resource "aws_cognito_user_pool_client" "idp_client" {
   count = local.need_cognito_client ? 1 : 0
-  name  = "${var.name}-cognito-idp-client"
+  name  = "${var.name}-${var.stage_name}-cognito-idp-client"
 
   user_pool_id    = local.cognito_config.userpool_id
   generate_secret = true
