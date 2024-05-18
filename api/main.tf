@@ -48,7 +48,7 @@ module "logging_defaults" {
 
 #### REST API
 resource "aws_api_gateway_rest_api" "api" {
-  name           = "${var.name}-rest-api"
+  name           = "${var.name}-${var.stage_name}-rest-api"
   api_key_source = "HEADER"
 
   endpoint_configuration {
@@ -197,7 +197,7 @@ resource "aws_api_gateway_method_settings" "api_settings" {
 }
 
 resource "aws_iam_role_policy" "cloudwatch" {
-  name = "${var.name}-cloudwatch"
+  name = "${var.name}-${var.stage_name}-cloudwatch"
   role = aws_iam_role.api_gateway.id
 
   policy = jsonencode({
@@ -232,7 +232,7 @@ resource "aws_cloudwatch_log_group" "api" {
 }
 
 resource "aws_cloudwatch_log_group" "access" {
-  name              = "${var.name}-access-logs"
+  name              = "${var.name}-${var.stage_name}-access-logs"
   retention_in_days = local.logging_config.log_retention_days
   kms_key_id        = var.kms_key_arn
 
@@ -273,7 +273,7 @@ resource "aws_api_gateway_gateway_response" "access_denied" {
 #### LAMBDA AUTHORIZER
 resource "aws_api_gateway_authorizer" "authorizer" {
   count                  = local.auth_enabled ? 1 : 0
-  name                   = "${var.name}-auth-authorizer"
+  name                   = "${var.name}-${var.stage_name}-auth-authorizer"
   type                   = "REQUEST"
   rest_api_id            = aws_api_gateway_rest_api.api.id
   authorizer_uri         = local.authorizer_invocation_arn
@@ -287,7 +287,7 @@ resource "aws_api_gateway_authorizer" "authorizer" {
 
 resource "aws_iam_role" "authorizer" {
   count = local.auth_enabled ? 1 : 0
-  name  = "${var.name}-authorizer-invocation-role"
+  name  = "${var.name}-${var.stage_name}-authorizer-invocation-role"
 
   assume_role_policy = file("${path.module}/templates/assume-role-api-gw-policy.tmpl.json")
 
@@ -296,7 +296,7 @@ resource "aws_iam_role" "authorizer" {
 
 resource "aws_iam_role_policy" "authorizer" {
   count = local.auth_enabled ? 1 : 0
-  name  = "${var.name}-authorizer-invocation-policy"
+  name  = "${var.name}-${var.stage_name}-authorizer-invocation-policy"
   role  = aws_iam_role.authorizer[0].id
 
   policy = templatefile("${path.module}/templates/invoke-authorizer-policy.tmpl.json", {
@@ -779,7 +779,7 @@ resource "aws_api_gateway_integration_response" "authorizer" {
 
 #### IAM
 resource "aws_iam_role" "api_gateway" {
-  name = "${var.name}-api_gateway-role"
+  name = "${var.name}-${var.stage_name}-api-gateway-role"
   path = "/"
 
   assume_role_policy   = file("${path.module}/templates/assume-role-api-gw-policy.tmpl.json")

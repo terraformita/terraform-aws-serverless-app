@@ -195,7 +195,7 @@ resource "aws_cognito_user_pool_client" "idp_client" {
 
 #### API ACCESS TO GUI BUCKET
 resource "aws_iam_policy" "gui_bucket" {
-  name   = "${var.name}-gui-bucket-access"
+  name   = "${var.name}-${var.stage_name}-gui-bucket-access"
   policy = data.aws_iam_policy_document.gui_bucket.json
   tags   = var.tags
 }
