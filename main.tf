@@ -278,7 +278,7 @@ module "auth_lambda" {
   count = local.auth_enabled ? 1 : 0
 
   source  = "terraformita/lambda/aws"
-  version = "0.1.5"
+  version = "0.1.6"
 
   stage = "${var.name}-${var.stage_name}"
   tags  = var.tags
@@ -287,10 +287,11 @@ module "auth_lambda" {
     name        = "cognito-authorizer"
     description = "Lambda authorizer for ${var.name} app, that performs user authentication and authorization via Amazon Cognito."
 
-    zip     = "${path.module}/lambda/auth/lambda_handler.py.zip"
-    handler = "lambda_handler.lambda_handler"
-    runtime = "python3.9"
-    memsize = "256"
+    zip           = "${path.module}/lambda/auth/lambda_handler.py.zip"
+    handler       = "lambda_handler.lambda_handler"
+    runtime       = "python3.12"
+    architectures = ["arm64"]
+    memsize       = "256"
 
     env = {
       BASE_URI             = "https://${var.domain}"
@@ -306,8 +307,9 @@ module "auth_lambda" {
   }
 
   layer = {
-    zip                 = "${path.module}/lambda/auth/sdk-layer.zip"
-    compatible_runtimes = ["python3.9"]
+    zip                      = "${path.module}/lambda/auth/sdk-layer.zip"
+    compatible_runtimes      = ["python3.12"]
+    compatible_architectures = ["arm64"]
   }
 
   depends_on = [
