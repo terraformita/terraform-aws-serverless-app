@@ -139,7 +139,6 @@ module "backend" {
 
     env      = var.backend.env_vars
     policies = var.backend.iam_policies
-
   }
 
   layer = {
