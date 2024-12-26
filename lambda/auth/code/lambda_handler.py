@@ -54,25 +54,30 @@ def handle_authenticated_request(event):
         log_debug('Request will be denied')
         log_debug(event)
         return generate_policy(username, "Deny", "unknown/unknown")
-    
+
     try:
         cookie = SimpleCookie()
         cookie.load(event["headers"]["cookie"])
         log_debug(f"Cookie: {cookie}")
-        
-        token = cookie["Authorization"].value
-        log_debug(f"Token from cookie: {token}")
+
+        access_token = cookie["Authorization"].value
+        log_debug(f"Access Token from cookie: {access_token}")
+
+        id_token = cookie["ID_Token"].value
+        log_debug(f"ID Token from cookie: {id_token}")
     except Exception as e:
         log_error("Problem retrieving Token Cookie from request", e)
         return generate_policy(username, "Deny", event["methodArn"])
 
     try:
-        payload = decode_token(token)
+        payload = decode_token(access_token)
         username = payload['sub']
+
+        decode_token(id_token)
     except jwt.ExpiredSignatureError:
         log_error("JWT token is expired")
         return generate_policy(username, "Deny", event["methodArn"])
-    
+
     return generate_policy(username, "Allow", event["methodArn"])
 
 def generate_policy(principal_id, effect, method_arn):
