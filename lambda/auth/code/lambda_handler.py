@@ -60,10 +60,10 @@ def handle_authenticated_request(event):
         cookie.load(event["headers"]["cookie"])
         log_debug(f"Cookie: {cookie}")
 
-        access_token = cookie["Authorization"].value
+        access_token = cookie["x-auth-token"].value
         log_debug(f"Access Token from cookie: {access_token}")
 
-        id_token = cookie["ID_Token"].value
+        id_token = cookie["x-id-token"].value
         log_debug(f"ID Token from cookie: {id_token}")
     except Exception as e:
         log_error("Problem retrieving Token Cookie from request", e)
@@ -132,14 +132,31 @@ def handle_login_request(code):
     if resp.status_code == 200:
         tokens = json.loads(resp.text)
         log_debug(f"Retrieved access token: {tokens['access_token']}")
+
+        access_token = tokens['access_token']
+        log_debug(f"Access Token: {access_token}")
+
+        id_token = tokens['id_token']
+        log_debug(f"ID Token: {id_token}")
+
+        username = "UNKNOWN_USERNAME"
+        try:
+            payload = decode_token(access_token)
+            username = payload['sub']
+
+            decode_token(id_token, strict_audience=False)
+        except jwt.ExpiredSignatureError:
+            log_error("JWT token is expired")
+
         result['statusCode'] = 302
         result['headers'] = {
             'Location': return_uri
         }
         result['multiValueHeaders'] = {
             'Set-Cookie': [
-                f"Authorization={tokens['access_token']}", 
-                f"ID_Token={tokens['id_token']}",
+                f"x-acess-token={tokens['access_token']}",
+                f"x-id-token={tokens['id_token']}",
+                f"x-auth-username={username}"
             ]
         }
         return result
@@ -173,7 +190,7 @@ def decode_token(token, strict_audience=True):
     payload = None
     try:
         log_debug(f"Decoding token with args: key={public_key}, alg={alg}, strict_aud={strict_audience}")
-        payload = jwt.decode(token, key=public_key, algorithms=[alg], strict_aud=strict_audience)
+        payload = jwt.decode(token, key=public_key, algorithms=[alg], options={ "strict_aud": strict_audience })
     except Exception as e:
         log_error("Error decoding JWT token", e)
         return payload
