@@ -139,10 +139,12 @@ def handle_login_request(code):
         id_token = tokens['id_token']
         log_debug(f"ID Token: {id_token}")
 
+        sub = "UNKNOWN_SUB"
         username = "UNKNOWN_USERNAME"
         try:
             payload = decode_token(access_token)
-            username = payload['sub']
+            sub = payload['sub'] if 'sub' in payload else 'UNKNOWN_SUB'
+            username = payload['username'] if 'username' in payload else 'UNKNOWN_USERNAME'
 
             decode_token(id_token, strict_audience=False)
         except jwt.ExpiredSignatureError:
@@ -154,8 +156,9 @@ def handle_login_request(code):
         }
         result['multiValueHeaders'] = {
             'Set-Cookie': [
-                f"x-access-token={tokens['access_token']}",
-                f"x-id-token={tokens['id_token']}",
+                f"x-access-token={access_token}",
+                f"x-id-token={id_token}",
+                f"x-auth-sub={sub}",
                 f"x-auth-username={username}"
             ]
         }
