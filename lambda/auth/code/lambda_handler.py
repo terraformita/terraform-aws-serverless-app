@@ -145,8 +145,6 @@ def handle_login_request(code):
             payload = decode_token(access_token)
             sub = payload['sub'] if 'sub' in payload else 'UNKNOWN_SUB'
             username = payload['username'] if 'username' in payload else 'UNKNOWN_USERNAME'
-
-            decode_token(id_token, strict_audience=False)
         except jwt.ExpiredSignatureError:
             log_error("JWT token is expired")
 
