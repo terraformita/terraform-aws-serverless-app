@@ -73,7 +73,7 @@ def handle_authenticated_request(event):
         payload = decode_token(access_token)
         username = payload['sub']
 
-        decode_token(id_token)
+        decode_token(id_token, strict_audience=False)
     except jwt.ExpiredSignatureError:
         log_error("JWT token is expired")
         return generate_policy(username, "Deny", event["methodArn"])
@@ -149,7 +149,7 @@ def handle_login_request(code):
 
     return result
 
-def decode_token(token):
+def decode_token(token, strict_audience=True):
     log_debug("Started decode_token")
 
     header = jwt.get_unverified_header(token)
@@ -170,7 +170,7 @@ def decode_token(token):
     if public_key is None:
         raise Exception('Public key was not found in JWKS Collection')
     
-    payload = jwt.decode(token, key=public_key, algorithms=[alg])
+    payload = jwt.decode(token, key=public_key, algorithms=[alg], strict_aud=strict_audience)
     log_debug(f"JWT token payload: {payload}")
     
     return payload
