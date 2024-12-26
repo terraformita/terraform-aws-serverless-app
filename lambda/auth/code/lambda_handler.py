@@ -60,7 +60,7 @@ def handle_authenticated_request(event):
         cookie.load(event["headers"]["cookie"])
         log_debug(f"Cookie: {cookie}")
 
-        access_token = cookie["x-auth-token"].value
+        access_token = cookie["x-access-token"].value
         log_debug(f"Access Token from cookie: {access_token}")
 
         id_token = cookie["x-id-token"].value
