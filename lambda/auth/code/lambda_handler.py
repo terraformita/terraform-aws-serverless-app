@@ -154,7 +154,7 @@ def handle_login_request(code):
         }
         result['multiValueHeaders'] = {
             'Set-Cookie': [
-                f"x-acess-token={tokens['access_token']}",
+                f"x-access-token={tokens['access_token']}",
                 f"x-id-token={tokens['id_token']}",
                 f"x-auth-username={username}"
             ]
