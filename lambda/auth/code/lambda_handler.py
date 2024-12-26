@@ -60,7 +60,7 @@ def handle_authenticated_request(event):
         cookie.load(event["headers"]["cookie"])
         log_debug(f"Cookie: {cookie}")
 
-        access_token = cookie["x-auth-token"].value
+        access_token = cookie["x-access-token"].value
         log_debug(f"Access Token from cookie: {access_token}")
 
         id_token = cookie["x-id-token"].value
@@ -154,7 +154,7 @@ def handle_login_request(code):
         }
         result['multiValueHeaders'] = {
             'Set-Cookie': [
-                f"x-acess-token={tokens['access_token']}",
+                f"x-access-token={tokens['access_token']}",
                 f"x-id-token={tokens['id_token']}",
                 f"x-auth-username={username}"
             ]
