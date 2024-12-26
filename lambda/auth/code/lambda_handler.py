@@ -157,22 +157,28 @@ def decode_token(token, strict_audience=True):
 
     kid = header['kid']
     alg = header['alg']
-    
+
     public_key = None
 
     for jwk in keys:
         key_id = jwk['kid']
-        
+
         if key_id == kid:
             public_key = jwt.algorithms.RSAAlgorithm.from_jwk(json.dumps(jwk))
             log_debug(f"Constructed public key: {public_key}")
 
     if public_key is None:
         raise Exception('Public key was not found in JWKS Collection')
-    
-    payload = jwt.decode(token, key=public_key, algorithms=[alg], strict_aud=strict_audience)
+
+    payload = None
+    try:
+        log_debug(f"Decoding token with args: key={public_key}, alg={alg}, strict_aud={strict_audience}")
+        payload = jwt.decode(token, key=public_key, algorithms=[alg], strict_aud=strict_audience)
+    except Exception as e:
+        log_error("Error decoding JWT token", e)
+        return payload
+
     log_debug(f"JWT token payload: {payload}")
-    
     return payload
 
 def log_error(explanation, e=None):
