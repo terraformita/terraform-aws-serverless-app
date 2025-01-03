@@ -154,8 +154,8 @@ def handle_login_request(code):
         }
         result['multiValueHeaders'] = {
             'Set-Cookie': [
-                f"x-access-token={access_token}",
-                f"x-id-token={id_token}",
+                f"x-access-token={access_token}; Max-Age=3600; HttpOnly",
+                f"x-id-token={id_token}; Max-Age=3600",
                 f"x-auth-sub={sub}",
                 f"x-auth-username={username}"
             ]
