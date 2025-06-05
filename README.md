@@ -65,7 +65,7 @@ module "serverless_app" {
   }
 
   backend = {
-    # Required. App backend configuration. Will be turned into AWS Lambda function.    
+    # Required. App backend configuration. Will be turned into AWS Lambda function.  
     path = "Web Access Path. Example: /api"
 
     name        = "Machine-readable name of the backend (example: react-app-backend)"
