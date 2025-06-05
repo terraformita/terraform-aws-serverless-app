@@ -42,7 +42,7 @@ def lambda_handler(event, context):
     if ('queryStringParameters' in event) and ('code' in event['queryStringParameters']):
         code = event['queryStringParameters']['code']
         return handle_login_request(code)
-    
+
     return handle_authenticated_request(event)
 
 def handle_authenticated_request(event):
@@ -88,10 +88,10 @@ def generate_policy(principal_id, effect, method_arn):
     stage = method_arn.split("/")[1]
     log_debug(f"Parsed base: {base}")
     log_debug(f"Parsed stage: {stage}")
-    
+
     arn = base + "/" + stage + "/*/*"
     log_debug(f"Constructed arn: {arn}")
-    
+
     if effect and method_arn:
         policy_document = {
             "Version": "2012-10-17",
