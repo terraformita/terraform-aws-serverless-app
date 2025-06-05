@@ -18,3 +18,7 @@ output "deployment" {
 output "auth_enabled" {
   value = local.auth_enabled
 }
+
+output "backend" {
+  value = module.backend
+}
