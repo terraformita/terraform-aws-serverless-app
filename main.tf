@@ -110,6 +110,7 @@ module "api" {
     enable_access_logging    = var.enable_access_logging
     enable_execution_logging = var.enable_execution_logging
     log_full_requests        = var.log_full_requests
+    log_retention_days       = var.log_retention_days
   }
 
   tags = var.tags
@@ -122,15 +123,15 @@ module "api" {
 
 module "backend" {
   source  = "terraformita/lambda/aws"
-  version = "0.1.5"
+  version = "0.2.6"
 
-  stage = var.stage_name
+  stage = var.name
   tags  = var.tags
 
   # Example lambda function configuration
   function = {
     name        = var.backend.name
-    description = try(var.backend.description, "Sample API")
+    description = "Collects infrastructure health status from different types of cloud resources that support application workloads."
 
     zip     = var.backend.source
     handler = var.backend.entrypoint
@@ -139,6 +140,11 @@ module "backend" {
 
     env      = var.backend.env_vars
     policies = var.backend.iam_policies
+  }
+
+  logs = {
+    log_retention_days = var.log_retention_days
+    kms_key_arn        = var.kms_key_arn
   }
 
   layer = {
@@ -278,16 +284,16 @@ module "auth_lambda" {
   count = local.auth_enabled ? 1 : 0
 
   source  = "terraformita/lambda/aws"
-  version = "0.1.6"
+  version = "0.2.6"
 
-  stage = "${var.name}-${var.stage_name}"
+  stage = var.name
   tags  = var.tags
 
   function = {
     name        = "cognito-authorizer"
     description = "Lambda authorizer for ${var.name} app, that performs user authentication and authorization via Amazon Cognito."
 
-    zip           = "${path.module}/lambda/auth/lambda_handler.py.zip"
+    zip           = data.archive_file.auth_lambda.output_path
     handler       = "lambda_handler.lambda_handler"
     runtime       = "python3.12"
     architectures = ["arm64"]
@@ -304,6 +310,11 @@ module "auth_lambda" {
       REGION               = "us-east-1"
       RETURN_URI           = "/${var.frontend.entrypoint}"
     }
+  }
+
+  logs = {
+    log_retention_days = var.log_retention_days
+    kms_key_arn        = var.kms_key_arn
   }
 
   layer = {
