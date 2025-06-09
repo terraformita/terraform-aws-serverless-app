@@ -77,7 +77,7 @@ variable "logging_config" {
     enable_access_logging    = bool
     enable_execution_logging = bool
     log_full_requests        = bool
-    log_retention_days       = optional(number)
+    log_retention_days       = optional(number, 7)
   })
 
   default = {
